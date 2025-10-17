@@ -23,12 +23,78 @@
     "/v1/projects": {
       "post": {
         "summary": "Create Project",
-        "description": "The Create Project API allows you to programmatically create transcription, translation, and dubbing projects using file URLs. The API handles file downloading, processing, cost calculation, and project creation automatically.",
+        "description": "The Create Project API allows you to programmatically create transcription, translation, and dubbing projects using file URLs or file uploads. The API handles file processing, cost calculation, and project creation automatically.",
         "operationId": "createProject",
-        "security": [{ "bearerAuth": [] }, { "apiKeyAuth": [] }],
+        "security": [{ "apiKeyAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "description": "Files to process (up to 5 files)"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Project title",
+                    "example": "Meeting Recording"
+                  },
+                  "sourceLanguage": {
+                    "type": "string",
+                    "description": "Source language code. Use \"auto\" to auto-detect source language.",
+                    "default": "auto",
+                    "example": "en",
+                    "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                  },
+                  "subtitleProfiles": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "subtitleProfileId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "UUID of the subtitle profile to use"
+                        },
+                        "languageCode": {
+                          "type": "string",
+                          "description": "Language code for the subtitle profile",
+                          "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                        }
+                      },
+                      "required": ["subtitleProfileId", "languageCode"]
+                    },
+                    "description": "Subtitle profiles to generate for the project"
+                  },
+                  "translationLanguages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                    },
+                    "description": "Target translation language codes"
+                  },
+                  "dubbingLanguages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"]
+                    },
+                    "description": "Dubbing languages. Must also be included in translationLanguages to ensure translation before dubbing."
+                  }
+                },
+                "required": ["title", "subtitleProfiles"]
+              }
+            },
             "application/json": {
               "schema": {
                 "type": "object",
@@ -40,56 +106,70 @@
                   },
                   "files": {
                     "type": "array",
-                    "minItems": 1,
-                    "maxItems": 5,
-                    "description": "Array of files to process",
                     "items": {
                       "type": "object",
                       "properties": {
                         "url": {
                           "type": "string",
                           "format": "uri",
-                          "description": "Publicly accessible file URL",
-                          "example": "https://example.com/video.mp4"
+                          "description": "Publicly accessible file URL"
                         },
                         "filename": {
                           "type": "string",
-                          "description": "Optional filename override",
-                          "example": "conference-recording.mp4"
+                          "description": "Optional filename override"
                         }
                       },
                       "required": ["url"]
-                    }
+                    },
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "description": "Array of files to process"
                   },
                   "sourceLanguage": {
                     "type": "string",
                     "description": "Source language code. Use \"auto\" to auto-detect source language.",
                     "default": "auto",
-                    "example": "en"
+                    "example": "en",
+                    "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                  },
+                  "subtitleProfiles": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "subtitleProfileId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "UUID of the subtitle profile to use"
+                        },
+                        "languageCode": {
+                          "type": "string",
+                          "description": "Language code for the subtitle profile",
+                          "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                        }
+                      },
+                      "required": ["subtitleProfileId", "languageCode"]
+                    },
+                    "description": "Subtitle profiles to generate for the project"
                   },
                   "translationLanguages": {
                     "type": "array",
-                    "description": "Target translation language codes",
                     "items": {
                       "type": "string",
-                      "example": "tr"
-                    }
+                      "enum": ["en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                    },
+                    "description": "Target translation language codes"
                   },
-                  "options": {
-                    "type": "object",
-                    "properties": {
-                      "dubbingLanguages": {
-                        "type": "array",
-                        "description": "Dubbing languages. Must also be included in translationLanguages to ensure translation before dubbing.",
-                        "items": {
-                          "type": "string",
-                          "example": "es"
-                        }
-                      }
-                    }
+                  "dubbingLanguages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"]
+                    },
+                    "description": "Dubbing languages. Must also be included in translationLanguages to ensure translation before dubbing."
                   }
                 },
-                "required": ["title", "files"]
+                "required": ["title", "files", "subtitleProfiles"]
               }
             }
           }
@@ -158,6 +238,123 @@
           },
           "401": {
             "description": "Unauthorized (invalid API key)"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{id}/status": {
+      "get": {
+        "summary": "Get Project Status",
+        "description": "Retrieve the current status and progress of a project",
+        "operationId": "getProjectStatus",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Project ID",
+                      "example": "01jzmvc20cjq5hj5saa96ttp2x"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Project name",
+                      "example": "Meeting Recording"
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "Current project status",
+                      "enum": ["pending", "processing", "completed", "failed"],
+                      "example": "processing"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Project creation timestamp"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Project last update timestamp"
+                    },
+                    "progress": {
+                      "type": "number",
+                      "description": "Overall project progress (0-100)",
+                      "example": 45.5
+                    },
+                    "recordings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Recording ID"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Recording name"
+                          },
+                          "status": {
+                            "type": "string",
+                            "description": "Recording status",
+                            "enum": ["pending", "processing", "completed", "failed"]
+                          },
+                          "tasks": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "description": "Task type (transcription, translation, dubbing, etc.)"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "description": "Task status",
+                                  "enum": ["pending", "processing", "completed", "failed"]
+                                },
+                                "progress": {
+                                  "type": "number",
+                                  "description": "Task progress (0-100)"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "description": "Recordings within the project"
+                    }
+                  },
+                  "required": ["id", "name", "status", "createdAt", "updatedAt"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Project not found"
           },
           "500": {
             "description": "Internal server error"
