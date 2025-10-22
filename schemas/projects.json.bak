@@ -17,10 +17,6 @@
     {
       "url": "https://api.studio.us.phrase-staging.com",
       "description": "Stage US Environment"
-    },
-    {
-      "url": "http://localhost:8080",
-      "description": "Localhost"
     }
   ],
   "paths": {
@@ -164,12 +160,78 @@
       },
       "post": {
         "summary": "Create Project",
-        "description": "The Create Project API allows you to programmatically create transcription, translation, and dubbing projects using file URLs. The API handles file processing, cost calculation, and project creation automatically. For file uploads, use the /v1/projects/upload endpoint instead.",
+        "description": "The Create Project API allows you to programmatically create transcription, translation, and dubbing projects using file URLs or file uploads. The API handles file processing, cost calculation, and project creation automatically.",
         "operationId": "createProject",
         "security": [{ "apiKeyAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "minItems": 1,
+                    "maxItems": 5,
+                    "description": "Files to process (up to 5 files)"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "Project title",
+                    "example": "Meeting Recording"
+                  },
+                  "sourceLanguage": {
+                    "type": "string",
+                    "description": "Source language code. Use \"auto\" to auto-detect source language.",
+                    "default": "auto",
+                    "example": "en",
+                    "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                  },
+                  "subtitleProfiles": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "subtitleProfileId": {
+                          "type": "string",
+                          "format": "uuid",
+                          "description": "UUID of the subtitle profile to use"
+                        },
+                        "languageCode": {
+                          "type": "string",
+                          "description": "Language code for the subtitle profile",
+                          "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                        }
+                      },
+                      "required": ["subtitleProfileId", "languageCode"]
+                    },
+                    "description": "Subtitle profiles to generate for the project"
+                  },
+                  "translationLanguages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                    },
+                    "description": "Target translation language codes"
+                  },
+                  "dubbingLanguages": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"]
+                    },
+                    "description": "Dubbing languages. Must also be included in translationLanguages to ensure translation before dubbing."
+                  }
+                },
+                "required": ["title", "subtitleProfiles"]
+              }
+            },
             "application/json": {
               "schema": {
                 "type": "object",
@@ -318,9 +380,7 @@
             "description": "Internal server error"
           }
         }
-      }
-    },
-    "/v1/projects/upload": {
+      },
       "post": {
         "summary": "Create Project with Upload",
         "description": "Create a project for file uploads. Returns signed URLs for uploading files to cloud storage.",
@@ -745,6 +805,123 @@
         }
       }
     },
+    "/v1/projects/{id}/status": {
+      "get": {
+        "summary": "Get Project Status",
+        "description": "Retrieve the current status and progress of a project",
+        "operationId": "getProjectStatus",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Project ID",
+                      "example": "01jzmvc20cjq5hj5saa96ttp2x"
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Project name",
+                      "example": "Meeting Recording"
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "Current project status",
+                      "enum": ["pending", "processing", "completed", "failed"],
+                      "example": "processing"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Project creation timestamp"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Project last update timestamp"
+                    },
+                    "progress": {
+                      "type": "number",
+                      "description": "Overall project progress (0-100)",
+                      "example": 45.5
+                    },
+                    "recordings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Recording ID"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Recording name"
+                          },
+                          "status": {
+                            "type": "string",
+                            "description": "Recording status",
+                            "enum": ["pending", "processing", "completed", "failed"]
+                          },
+                          "tasks": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "description": "Task type (transcription, translation, dubbing, etc.)"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "description": "Task status",
+                                  "enum": ["pending", "processing", "completed", "failed"]
+                                },
+                                "progress": {
+                                  "type": "number",
+                                  "description": "Task progress (0-100)"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "description": "Recordings within the project"
+                    }
+                  },
+                  "required": ["id", "name", "status", "createdAt", "updatedAt"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Project not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
     "/v1/subtitle-profiles": {
       "get": {
         "summary": "Get Subtitle Profiles",
@@ -828,34 +1005,461 @@
         }
       }
     },
-
-    "/v1/recordings/{recordingId}/status": {
+    "/v1/projects/{projectId}/recordings/{recordingId}/transcription-srt": {
       "get": {
-        "summary": "Get Recording Status (Unified)",
-        "description": "Retrieve overall status, per-language completed steps, or single-language steps using query params. For completed steps, you will find only fields for the completed steps. If transcription is not completed yet you will receive an empty map.",
-        "operationId": "getRecordingStatusUnified",
+        "summary": "Get Transcription SRT",
+        "description": "Retrieve the SRT subtitle file for the original transcription of a recording",
+        "operationId": "getTranscriptionSrt",
         "security": [{ "apiKeyAuth": [] }],
         "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "recordingId",
             "in": "path",
             "required": true,
             "description": "Recording ID",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transcription SRT retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "srt": {
+                      "type": "string",
+                      "description": "SRT formatted subtitle content",
+                      "example": "1\n00:00:01,000 --> 00:00:04,000\nHello, welcome to our meeting.\n\n2\n00:00:05,000 --> 00:00:08,000\nToday we will discuss the project."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Recording not found or transcription SRT not available"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectId}/recordings/{recordingId}/translations-srt": {
+      "get": {
+        "summary": "Get All Translation SRTs",
+        "description": "Retrieve SRT subtitle files for all translation languages of a recording",
+        "operationId": "getAllTranslationSrts",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
           },
           {
-            "name": "summary",
-            "in": "query",
-            "required": false,
-            "description": "If true, returns overall status as a string.",
-            "schema": { "type": "boolean", "default": false }
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "description": "Recording ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Translation SRTs retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "translations": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of language codes to SRT formatted subtitle content",
+                      "example": {
+                        "es": "1\n00:00:01,000 --> 00:00:04,000\nHola, bienvenidos a nuestra reunión.\n\n2\n00:00:05,000 --> 00:00:08,000\nHoy discutiremos el proyecto.",
+                        "fr": "1\n00:00:01,000 --> 00:00:04,000\nBonjour, bienvenue à notre réunion.\n\n2\n00:00:05,000 --> 00:00:08,000\nAujourd'hui nous discuterons du projet."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Recording not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectId}/recordings/{recordingId}/translations-srt/{languageCode}": {
+      "get": {
+        "summary": "Get Translation SRT",
+        "description": "Retrieve the SRT subtitle file for a specific translation language of a recording",
+        "operationId": "getTranslationSrt",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
           },
           {
-            "name": "language",
-            "in": "query",
-            "required": false,
-            "description": "Language code to get steps for a specific language.",
-            "schema": { "type": "string" }
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "description": "Recording ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "languageCode",
+            "in": "path",
+            "required": true,
+            "description": "Target language code",
+            "schema": {
+              "type": "string",
+              "enum": ["en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Translation SRT retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "srt": {
+                      "type": "string",
+                      "description": "SRT formatted subtitle content"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Recording not found or translation SRT not available"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectId}/recordings/{recordingId}/dubbings-srt": {
+      "get": {
+        "summary": "Get All Dubbing SRTs",
+        "description": "Retrieve SRT subtitle files for all dubbing languages of a recording",
+        "operationId": "getAllDubbingSrts",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "description": "Recording ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dubbing SRTs retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "translations": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "description": "Map of language codes to SRT formatted subtitle content"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Recording not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectId}/recordings/{recordingId}/dubbings-srt/{languageCode}": {
+      "get": {
+        "summary": "Get Dubbing SRT",
+        "description": "Retrieve the SRT subtitle file for a specific dubbing language of a recording",
+        "operationId": "getDubbingSrt",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "description": "Recording ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "languageCode",
+            "in": "path",
+            "required": true,
+            "description": "Target dubbing language code",
+            "schema": {
+              "type": "string",
+              "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dubbing SRT retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "srt": {
+                      "type": "string",
+                      "description": "SRT formatted subtitle content"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Recording not found or dubbing SRT not available"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectId}/recordings/{recordingId}/dubbings-audio": {
+      "get": {
+        "summary": "Get All Dubbing Audio Files",
+        "description": "Retrieve download URLs for all dubbing audio files of a recording",
+        "operationId": "getAllDubbingAudios",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "description": "Recording ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dubbing audio URLs retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Download URL for the dubbing audio file"
+                  },
+                  "description": "Map of language codes to dubbing audio download URLs",
+                  "example": {
+                    "es": "https://storage.example.com/dubbing/es/audio.mp3",
+                    "fr": "https://storage.example.com/dubbing/fr/audio.mp3"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Recording not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectId}/recordings/{recordingId}/dubbings-audio/{languageCode}": {
+      "get": {
+        "summary": "Get Dubbing Audio File",
+        "description": "Retrieve download URL for a specific dubbing audio file of a recording",
+        "operationId": "getDubbingAudio",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "description": "Recording ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "languageCode",
+            "in": "path",
+            "required": true,
+            "description": "Target dubbing language code",
+            "schema": {
+              "type": "string",
+              "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dubbing audio URL retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "Download URL for the dubbing audio file"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Recording not found or dubbing audio not available"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectId}/recordings/{recordingId}/status": {
+      "get": {
+        "summary": "Get Recording Status",
+        "description": "Retrieve the current processing status of a recording",
+        "operationId": "getRecordingStatus",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "description": "Recording ID",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -864,108 +1468,192 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    { "type": "object", "properties": { "status": { "type": "string", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"] } }, "required": ["status"] },
-                    { "type": "object", "additionalProperties": { "type": "object", "properties": { "transcription": { "type": "boolean" }, "translation": { "type": "boolean" }, "dubbing": { "type": "boolean" }, "summary": { "type": "boolean" } } } },
-                    { "type": "object", "properties": { "transcription": { "type": "boolean" }, "translation": { "type": "boolean" }, "dubbing": { "type": "boolean" }, "summary": { "type": "boolean" } } }
-                  ]
-                },
-                "examples": {
-                  "overall": { "summary": "Overall status", "value": { "status": "IN_PROGRESS" } },
-                  "allLangs": { "summary": "All langs + steps", "value": { "en": { "transcription": true }, "tr": { "transcription": true, "translation": true, "dubbing": true } } },
-                  "singleLang": { "summary": "Single language steps", "value": { "transcription": true, "translation": true, "summary": true } }
-          }
-        }
-      }
-    },
-          "401": { "description": "Unauthorized (invalid API key)" },
-          "404": { "description": "Recording not found" },
-          "500": { "description": "Internal server error" }
-        }
-      }
-    },
-    "/v1/recordings/{recordingId}": {
-      "get": {
-        "summary": "Get Recording Output",
-        "description": "Retrieve transcription, translation or dubbing outputs using a single query-driven endpoint.",
-        "operationId": "getRecordingOutput",
-        "security": [{ "apiKeyAuth": [] }],
-        "parameters": [
-          {
-            "name": "recordingId",
-            "in": "path",
-            "required": true,
-            "description": "Recording ID",
-            "schema": { "type": "string" }
-          },
-          {
-            "name": "task",
-            "in": "query",
-            "required": true,
-            "description": "Task to retrieve output for",
-            "schema": { "type": "string", "enum": ["transcription", "translation", "dubbing"] }
-          },
-          {
-            "name": "format",
-            "in": "query",
-            "required": false,
-            "description": "Output format. Defaults to vtt for transcription, srt for translation/dubbing.",
-            "schema": { "type": "string", "enum": ["srt", "vtt", "mp3"] }
-          },
-          {
-            "name": "lang",
-            "in": "query",
-            "required": false,
-            "description": "Language code (when requesting a specific translation or dubbing).",
-            "schema": { "type": "string" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Recording output retrieved successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "oneOf": [
-                    { "type": "object", "properties": { "vtt": { "type": "string" } }, "required": ["vtt"] },
-                    { "type": "object", "properties": { "srt": { "type": "string" } }, "required": ["srt"] },
-                    { "type": "object", "properties": { "url": { "type": "string", "format": "uri" } }, "required": ["url"] },
-                    { "type": "object", "properties": { "translations": { "type": "object", "additionalProperties": { "type": "string" } } }, "required": ["translations"] },
-                    { "type": "object", "additionalProperties": { "type": "string", "format": "uri" } }
-                  ]
-                },
-                "examples": {
-                  "transcriptionVtt": {
-                    "summary": "Original transcription as VTT",
-                    "value": { "vtt": "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nHello..." }
-                  },
-                  "translationEsVtt": {
-                    "summary": "Spanish translation as VTT",
-                    "value": { "vtt": "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nHola..." }
-                  },
-                  "allTranslationsSrt": {
-                    "summary": "All translations as SRTs",
-                    "value": { "translations": { "es": "1\n00:00:01,000 --> 00:00:04,000\nHola..." } }
-                  },
-                  "dubbingEsVtt": {
-                    "summary": "Spanish dubbing subtitles as VTT",
-                    "value": { "vtt": "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nHola..." }
-                  },
-                  "allDubbingAudioUrls": {
-                    "summary": "All dubbings → audio URLs",
-                    "value": { "es": "https://example.com/es.mp3", "fr": "https://example.com/fr.mp3" }
-                  },
-                  "oneDubbingAudioUrl": {
-                    "summary": "One dubbing (French) → audio URL",
-                    "value": { "url": "https://example.com/fr.mp3" }
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "description": "Overall recording status",
+                      "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"],
+                      "example": "IN_PROGRESS"
+                    }
                   }
                 }
               }
             }
           },
-          "401": { "description": "Unauthorized (invalid API key)" },
-          "404": { "description": "Recording not found" },
-          "500": { "description": "Internal server error" }
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Recording not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectId}/recordings/{recordingId}/completed-steps": {
+      "get": {
+        "summary": "Get Recording Completed Steps for All Languages",
+        "description": "Retrieve completion status for all processing steps across all languages for a recording",
+        "operationId": "getRecordingCompletedStepsForAllLanguages",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "description": "Recording ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recording completed steps retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "transcription": {
+                        "type": "boolean",
+                        "description": "Whether transcription is completed"
+                      },
+                      "translation": {
+                        "type": "boolean",
+                        "description": "Whether translation is completed for this language"
+                      },
+                      "dubbing": {
+                        "type": "boolean",
+                        "description": "Whether dubbing is completed for this language"
+                      },
+                      "summary": {
+                        "type": "boolean",
+                        "description": "Whether summary is completed"
+                      }
+                    },
+                    "description": "Completion status for each language"
+                  },
+                  "description": "Map of language codes to completion status",
+                  "example": {
+                    "en": {
+                      "transcription": true,
+                      "translation": true,
+                      "dubbing": true,
+                      "summary": true
+                    },
+                    "es": {
+                      "transcription": false,
+                      "translation": false,
+                      "dubbing": false,
+                      "summary": false
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Recording not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/v1/projects/{projectId}/recordings/{recordingId}/completed-steps/{languageCode}": {
+      "get": {
+        "summary": "Get Recording Completed Steps",
+        "description": "Retrieve completion status for all processing steps for a specific language of a recording",
+        "operationId": "getRecordingCompletedSteps",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recordingId",
+            "in": "path",
+            "required": true,
+            "description": "Recording ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "languageCode",
+            "in": "path",
+            "required": true,
+            "description": "Target language code",
+            "schema": {
+              "type": "string",
+              "enum": ["en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recording completed steps retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "transcription": {
+                      "type": "boolean",
+                      "description": "Whether transcription is completed (for source language)"
+                    },
+                    "translation": {
+                      "type": "boolean",
+                      "description": "Whether translation is completed for the specified language"
+                    },
+                    "dubbing": {
+                      "type": "boolean",
+                      "description": "Whether dubbing is completed for the specified language"
+                    },
+                    "summary": {
+                      "type": "boolean",
+                      "description": "Whether summary is completed (for source language)"
+                    }
+                  },
+                  "description": "Completion status for the specified language"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)"
+          },
+          "404": {
+            "description": "Recording not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
         }
       }
     }
