@@ -20,7 +20,7 @@ The Phrase Studio API allows you to:
 - `GET /v1/projects/{id}/status` - Get project status and progress
 - `POST /v1/projects` - Create project with file URLs or uploads
 - `POST /v1/projects/upload` - Create project for file uploads (returns signed URLs)
-- `POST /v1/projects/{projectId}/finalize` - Finalize uploaded files and start processing
+- `POST /v1/projects/{id}/start` - Start processing with uploaded files
 
 ### Recordings
 - `GET /v1/projects/{projectId}/recordings/{recordingId}/transcription-srt` - Get transcription SRT
