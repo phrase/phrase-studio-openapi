@@ -186,7 +186,7 @@
       },
       "post": {
         "summary": "Create Project",
-        "description": "The Create Project API allows you to programmatically create transcription, translation, and dubbing projects using file URLs. The API handles file processing, cost calculation, and project creation automatically. For file uploads, use the /v1/projects/upload endpoint instead.",
+        "description": "Create a project for transcription, translation, and dubbing. This endpoint supports two modes:\n\n**Mode 1: File Upload** - Provide `fileCount` to upload files directly. The endpoint redirects to an external upload service where files can be uploaded. After upload completion, the upload service will finalize the project automatically.\n\n**Mode 2: File URLs** - Send a multipart/form-data request and provide `fileUrls` (JSON array of publicly accessible file URLs), along with the same configuration fields (`title`, `sourceLanguage`, `subtitleProfiles`, etc.).\n\nBoth modes require the same configuration parameters (sourceLanguage, subtitleProfiles, translationLanguages, etc.).\n\nNote: The File URL mode can be unreliable because some remote servers block non-browser requests (e.g., bot protection, required cookies, or user-agent restrictions). Prefer the upload mode when available.",
         "operationId": "createProject",
         "security": [{ "apiKeyAuth": [] }],
         "requestBody": {
@@ -194,196 +194,332 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "description": "Project title",
-                    "example": "Meeting Recording"
-                  },
-                  "files": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "url": {
-                          "type": "string",
-                          "format": "uri",
-                          "description": "Publicly accessible file URL"
-                        },
-                        "filename": {
-                          "type": "string",
-                          "description": "Optional filename override"
-                        }
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "title": "File Upload Mode",
+                    "description": "Use this schema for file uploads",
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "description": "Project title",
+                        "example": "Meeting Recording"
                       },
-                      "required": ["url"]
-                    },
-                    "minItems": 1,
-                    "maxItems": 5,
-                    "description": "Array of files to process"
-                  },
-                  "sourceLanguage": {
-                    "type": "string",
-                    "description": "Source language code. Use \"auto\" to auto-detect source language.",
-                    "default": "auto",
-                    "example": "en",
-                    "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
-                  },
-                  "subtitleProfiles": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "subtitleProfileId": {
-                          "type": "string",
-                          "format": "uuid",
-                          "description": "UUID of the subtitle profile to use"
-                        },
-                        "languageCode": {
-                          "type": "string",
-                          "description": "Language code for the subtitle profile",
-                          "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
-                        }
+                      "fileCount": {
+                        "type": "number",
+                        "minimum": 1,
+                        "maximum": 5,
+                        "description": "Number of files to be uploaded (required for upload mode)",
+                        "example": 2
                       },
-                      "required": ["subtitleProfileId", "languageCode"]
+                      "sourceLanguage": {
+                        "type": "string",
+                        "description": "Source language code. Use \"auto\" to auto-detect source language.",
+                        "default": "auto",
+                        "example": "en",
+                        "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                      },
+                      "subtitleProfiles": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "subtitleProfileId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "UUID of the subtitle profile to use"
+                            },
+                            "languageCode": {
+                              "type": "string",
+                              "description": "Language code for the subtitle profile",
+                              "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                            }
+                          },
+                          "required": ["subtitleProfileId", "languageCode"]
+                        },
+                        "description": "Subtitle profiles to generate for the project"
+                      },
+                      "translationLanguages": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                        },
+                        "description": "Target translation language codes"
+                      },
+                      "dubbingLanguages": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"]
+                        },
+                        "description": "Dubbing languages. Must also be included in translationLanguages to ensure translation before dubbing."
+                      },
+                      "summary": {
+                        "type": "boolean",
+                        "description": "Whether to generate summary",
+                        "default": false
+                      },
+                      "customAttributes": {
+                        "type": "boolean",
+                        "description": "Whether to enable custom attributes",
+                        "default": false
+                      },
+                      "insights": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "description": "Array of insight IDs"
+                      },
+                      "glossary": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "Glossary ID"
+                          },
+                          "content": {
+                            "type": "string",
+                            "description": "Glossary content"
+                          }
+                        },
+                        "description": "Glossary configuration"
+                      },
+                      "safeCommunications": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "description": "Array of safe communication IDs"
+                      },
+                      "pronunciations": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "pronunciationId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Pronunciation ID"
+                            },
+                            "languageCode": {
+                              "type": "string",
+                              "description": "Language code for pronunciation",
+                              "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"]
+                            }
+                          },
+                          "required": ["pronunciationId", "languageCode"]
+                        },
+                        "description": "Pronunciation configurations"
+                      },
+                      "logLevel": {
+                        "type": "string",
+                        "description": "Log level for the project",
+                        "enum": ["DEBUG", "INFO", "WARN", "ERROR"]
+                      }
                     },
-                    "description": "Subtitle profiles to generate for the project"
+                    "required": ["title", "fileCount", "sourceLanguage", "subtitleProfiles"]
                   },
-                  "translationLanguages": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "enum": ["en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                  {
+                    "type": "object",
+                    "title": "File URL Mode (JSON)",
+                    "description": "Use this schema for file URLs when sending JSON. If you are sending multipart/form-data, see the multipart variant below.",
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "description": "Project title",
+                        "example": "Meeting Recording"
+                      },
+                      "fileUrls": {
+                        "type": "array",
+                        "items": { "type": "string", "format": "uri" },
+                        "minItems": 1,
+                        "maxItems": 5,
+                        "description": "Array of file URLs to process (URL mode)"
+                      },
+                      "sourceLanguage": {
+                        "type": "string",
+                        "description": "Source language code. Use \"auto\" to auto-detect source language.",
+                        "default": "auto",
+                        "example": "en",
+                        "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                      },
+                      "subtitleProfiles": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "subtitleProfileId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "UUID of the subtitle profile to use"
+                            },
+                            "languageCode": {
+                              "type": "string",
+                              "description": "Language code for the subtitle profile",
+                              "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                            }
+                          },
+                          "required": ["subtitleProfileId", "languageCode"]
+                        },
+                        "description": "Subtitle profiles to generate for the project"
+                      },
+                      "translationLanguages": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
+                        },
+                        "description": "Target translation language codes"
+                      },
+                      "dubbingLanguages": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"]
+                        },
+                        "description": "Dubbing languages. Must also be included in translationLanguages to ensure translation before dubbing."
+                      },
+                      "summary": {
+                        "type": "boolean",
+                        "description": "Whether to generate summary",
+                        "default": false
+                      },
+                      "customAttributes": {
+                        "type": "boolean",
+                        "description": "Whether to enable custom attributes",
+                        "default": false
+                      },
+                      "insights": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "description": "Array of insight IDs"
+                      },
+                      "glossary": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "Glossary ID"
+                          },
+                          "content": {
+                            "type": "string",
+                            "description": "Glossary content"
+                          }
+                        },
+                        "description": "Glossary configuration"
+                      },
+                      "safeCommunications": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "description": "Array of safe communication IDs"
+                      },
+                      "pronunciations": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "pronunciationId": {
+                              "type": "string",
+                              "format": "uuid",
+                              "description": "Pronunciation ID"
+                            },
+                            "languageCode": {
+                              "type": "string",
+                              "description": "Language code for pronunciation",
+                              "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"]
+                            }
+                          },
+                          "required": ["pronunciationId", "languageCode"]
+                        },
+                        "description": "Pronunciation configurations"
+                      },
+                      "logLevel": {
+                        "type": "string",
+                        "description": "Log level for the project",
+                        "enum": ["DEBUG", "INFO", "WARN", "ERROR"]
+                      }
                     },
-                    "description": "Target translation language codes"
-                  },
-                  "dubbingLanguages": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"]
-                    },
-                    "description": "Dubbing languages. Must also be included in translationLanguages to ensure translation before dubbing."
+                    "required": ["title", "fileUrls", "sourceLanguage", "subtitleProfiles"]
                   }
-                },
-                "required": ["title", "files", "subtitleProfiles"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Project created successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "Created project ID",
-                      "example": "01jzmvc20cjq5hj5saa96ttp2x"
-                    }
+                ]
+              },
+              "examples": {
+                "fileUpload": {
+                  "summary": "File Upload Mode",
+                  "value": {
+                    "title": "Meeting Recording",
+                    "fileCount": 2,
+                    "sourceLanguage": "auto",
+                    "subtitleProfiles": [
+                      {
+                        "subtitleProfileId": "550e8400-e29b-41d4-a716-446655440000",
+                        "languageCode": "en"
+                      }
+                    ],
+                    "translationLanguages": ["es", "fr"],
+                    "dubbingLanguages": ["es", "fr"]
                   }
                 }
               }
-            }
-          },
-          "400": {
-            "description": "Bad Request (invalid input)",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-                "examples": {
-                  "no_files": {
-                    "summary": "No files provided",
-                    "value": { "success": false, "statusCode": 400, "message": "There are no files", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  },
-                  "too_many_files": {
-                    "summary": "Too many files",
-                    "value": { "success": false, "statusCode": 400, "message": "Maximum 5 files allowed. You currently have 7 file(s).", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  },
-                  "invalid_format": {
-                    "summary": "Unsupported file format",
-                    "value": { "success": false, "statusCode": 400, "message": "Unsupported file format. Only MP3, WAV, M4A, MP4, and MOV files are allowed.", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  },
-                  "too_large": {
-                    "summary": "File too large",
-                    "value": { "success": false, "statusCode": 400, "message": "File size cannot exceed 5GB.", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  },
-                  "too_long": {
-                    "summary": "File too long",
-                    "value": { "success": false, "statusCode": 400, "message": "File duration cannot exceed 180 minutes.", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized (invalid API key)",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-                "examples": {
-                  "invalid_api_key": {
-                    "summary": "Invalid API key",
-                    "value": { "success": false, "statusCode": 401, "message": "Unauthorized", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-                "examples": {
-                  "server_error": {
-                    "summary": "Unexpected error",
-                    "value": { "success": false, "statusCode": 500, "message": "Internal server error", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/projects/upload": {
-      "post": {
-        "summary": "Create Project with Upload",
-        "description": "Create a project for file uploads. Returns signed URLs for uploading files to cloud storage.",
-        "operationId": "createProjectWithUpload",
-        "security": [{ "apiKeyAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
+            },
+            "multipart/form-data": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "title": {
+                  "title": { "type": "string", "description": "Project title" },
+                  "sourceLanguage": {
                     "type": "string",
-                    "description": "Project title",
-                    "example": "Meeting Recording"
+                    "description": "Source language code",
+                    "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
                   },
-                  "fileCount": {
-                    "type": "number",
-                    "minimum": 1,
-                    "maximum": 5,
-                    "description": "Number of files to be uploaded",
-                    "example": 2
+                  "subtitleProfiles": {
+                    "type": "string",
+                    "description": "JSON string array of objects: [{\"subtitleProfileId\": \"uuid\", \"languageCode\": \"en\"}]"
+                  },
+                  "fileUrls": {
+                    "type": "string",
+                    "description": "JSON string array of file URLs: [\"https://...\", \"https://...\"]"
+                  },
+                  "translationLanguages": {
+                    "type": "string",
+                    "description": "Optional JSON string array of language codes"
+                  },
+                  "dubbingLanguages": {
+                    "type": "string",
+                    "description": "Optional JSON string array of dubbing language codes"
                   }
                 },
-                "required": ["title", "fileCount"]
+                "required": ["title", "sourceLanguage", "subtitleProfiles", "fileUrls"]
+              },
+              "examples": {
+                "fileUrlsMultipart": {
+                  "summary": "File URL Mode (multipart/form-data)",
+                  "value": {
+                    "title": "My Project",
+                    "sourceLanguage": "en",
+                    "subtitleProfiles": "[{\"subtitleProfileId\":\"12c499bb-1ec9-43f2-9e0a-c07486366898\",\"languageCode\":\"en\"}]",
+                    "fileUrls": "[\"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4\",\"https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4\"]"
+                  }
+                }
               }
             }
           }
         },
         "responses": {
           "201": {
-            "description": "Project created successfully with upload URLs",
+            "description": "Project created successfully (File URL mode)",
             "content": {
               "application/json": {
                 "schema": {
@@ -393,31 +529,21 @@
                       "type": "string",
                       "description": "Created project ID",
                       "example": "01jzmvc20cjq5hj5saa96ttp2x"
-                    },
-                    "uploadUrls": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "fileId": {
-                            "type": "string",
-                            "description": "Unique file identifier"
-                          },
-                          "signedUrl": {
-                            "type": "string",
-                            "description": "Signed URL for file upload"
-                          },
-                          "contentType": {
-                            "type": "string",
-                            "description": "Expected content type"
-                          }
-                        },
-                        "required": ["fileId", "signedUrl"]
-                      },
-                      "description": "Array of upload URLs for files"
                     }
                   }
                 }
+              }
+            }
+          },
+          "307": {
+            "description": "Redirect to external upload service (File Upload mode)",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "description": "URL to redirect to for file upload"
               }
             }
           },
@@ -429,7 +555,7 @@
                 "examples": {
                   "invalid_file_count": {
                     "summary": "Invalid file count",
-                    "value": { "success": false, "statusCode": 400, "message": "File count must be greater than 0", "timestamp": "2025-01-01T00:00:00.000Z" }
+                    "value": { "success": false, "statusCode": 400, "message": "File count must be between 1 and 5", "timestamp": "2025-01-01T00:00:00.000Z" }
                   }
                 }
               }
@@ -444,6 +570,20 @@
                   "invalid_api_key": {
                     "summary": "Invalid API key",
                     "value": { "success": false, "statusCode": 401, "message": "Unauthorized", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "upload_service_unavailable": {
+                    "summary": "Upload service not configured",
+                    "value": { "success": false, "statusCode": 503, "message": "Single-shot upload URL is not configured", "timestamp": "2025-01-01T00:00:00.000Z" }
                   }
                 }
               }
@@ -589,151 +729,6 @@
                     }
                   },
                   "required": ["id", "name", "status", "createdAt", "updatedAt"]
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized (invalid API key)",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-                "examples": {
-                  "invalid_api_key": {
-                    "summary": "Invalid API key",
-                    "value": { "success": false, "statusCode": 401, "message": "Unauthorized", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Project not found",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-                "examples": {
-                  "not_found": {
-                    "summary": "Project not found",
-                    "value": { "success": false, "statusCode": 404, "message": "Project not found", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-                "examples": {
-                  "server_error": {
-                    "summary": "Unexpected error",
-                    "value": { "success": false, "statusCode": 500, "message": "Internal server error", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-
-    },
-
-    "/v1/projects/{projectId}/finalize": {
-      "post": {
-        "summary": "Finalize Project Uploads",
-        "description": "Start processing using files uploaded via the upload URLs.",
-        "operationId": "finalizeProjectUploads",
-        "security": [{ "apiKeyAuth": [] }],
-        "parameters": [
-          {
-            "name": "projectId",
-            "in": "path",
-            "required": true,
-            "description": "Project ID",
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "uploadedFiles": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "fileId": { "type": "string", "description": "File ID from upload response" },
-                        "filename": { "type": "string", "description": "Original filename" },
-                        "contentType": { "type": "string", "description": "Content type of the uploaded file" }
-                      },
-                      "required": ["fileId", "filename", "contentType"]
-                    },
-                    "description": "Array of uploaded file information"
-                  },
-                  "sourceLanguage": {
-                    "type": "string",
-                    "description": "Source language code. Use \"auto\" to auto-detect source language.",
-                    "default": "auto",
-                    "example": "en",
-                    "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"]
-                  },
-                  "subtitleProfiles": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "subtitleProfileId": { "type": "string", "format": "uuid", "description": "UUID of the subtitle profile to use" },
-                        "languageCode": { "type": "string", "description": "Language code for the subtitle profile", "enum": ["auto", "en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"] }
-                      },
-                      "required": ["subtitleProfileId", "languageCode"]
-                    },
-                    "description": "Subtitle profiles to generate for the project"
-                  },
-                  "translationLanguages": {
-                    "type": "array",
-                    "items": { "type": "string", "enum": ["en", "es", "fr", "de", "it", "pt", "ru", "ja", "ko", "zh-cn", "tr", "pl", "nl", "ar", "sv", "fi", "da", "no", "cs", "el", "hu", "ro", "bg", "hr", "sk", "sl", "et", "lv", "lt", "mt", "ga", "cy", "eu", "ca", "gl", "oc", "br", "co", "fy", "gd", "gv", "kw", "lb", "li", "nds", "pap", "pms", "rm", "sc", "scn", "sco", "szl", "vec", "vls", "wa", "wo", "zea"] },
-                    "description": "Target translation language codes"
-                  },
-                  "dubbingLanguages": {
-                    "type": "array",
-                    "items": { "type": "string", "enum": ["en", "en-US", "en-GB", "ja", "zh-cn", "de", "hi", "fr", "fr-CA", "ko", "pt-BR", "pt", "it", "es", "es-MX", "id", "nl", "tr", "fil", "pl", "sv", "bg", "ro", "ar-SA", "ar", "cs", "el", "fi", "hr", "ms", "sk", "da", "ta", "uk", "ru", "es-MX", "es-AR"] },
-                    "description": "Dubbing languages. Must also be included in translationLanguages to ensure translation before dubbing."
-                  }
-                },
-                "required": ["uploadedFiles", "sourceLanguage", "subtitleProfiles"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Project finalized and processing started successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": { "type": "string", "description": "Project ID", "example": "01jzmvc20cjq5hj5saa96ttp2x" }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request (invalid input)",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
-                "examples": {
-                  "no_uploaded_files": {
-                    "summary": "No uploaded files",
-                    "value": { "success": false, "statusCode": 400, "message": "There are no uploaded files to finalize", "timestamp": "2025-01-01T00:00:00.000Z" }
-                  }
                 }
               }
             }
