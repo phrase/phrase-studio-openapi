@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Studio API",
-    "description": "API for creating transcription, translation, and dubbing projects with file URLs.",
+    "description": "API for creating projects and reading transcription, translation, and dubbing results.",
     "version": "1.0.0"
   },
   "servers": [
@@ -17,95 +17,101 @@
     {
       "url": "https://api.studio.us.phrase-staging.com",
       "description": "Stage US Environment"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Localhost"
     }
   ],
   "paths": {
     "/v1/projects": {
-      "post": {
-        "summary": "Create Project",
-        "description": "The Create Project API allows you to programmatically create transcription, translation, and dubbing projects using file URLs. The API handles file downloading, processing, cost calculation, and project creation automatically.",
-        "operationId": "createProject",
-        "security": [{ "bearerAuth": [] }, { "apiKeyAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string",
-                    "description": "Project title",
-                    "example": "Meeting Recording"
-                  },
-                  "files": {
-                    "type": "array",
-                    "minItems": 1,
-                    "maxItems": 5,
-                    "description": "Array of files to process",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "url": {
-                          "type": "string",
-                          "format": "uri",
-                          "description": "Publicly accessible file URL",
-                          "example": "https://example.com/video.mp4"
-                        },
-                        "filename": {
-                          "type": "string",
-                          "description": "Optional filename override",
-                          "example": "conference-recording.mp4"
-                        }
-                      },
-                      "required": ["url"]
-                    }
-                  },
-                  "sourceLanguage": {
-                    "type": "string",
-                    "description": "Source language code. Use \"auto\" to auto-detect source language.",
-                    "default": "auto",
-                    "example": "en"
-                  },
-                  "translationLanguages": {
-                    "type": "array",
-                    "description": "Target translation language codes",
-                    "items": {
-                      "type": "string",
-                      "example": "tr"
-                    }
-                  },
-                  "options": {
-                    "type": "object",
-                    "properties": {
-                      "dubbingLanguages": {
-                        "type": "array",
-                        "description": "Dubbing languages. Must also be included in translationLanguages to ensure translation before dubbing.",
-                        "items": {
-                          "type": "string",
-                          "example": "es"
-                        }
-                      }
-                    }
-                  }
-                },
-                "required": ["title", "files"]
-              }
+      "get": {
+        "summary": "List Projects",
+        "description": "Retrieve a list of projects for the authenticated account.",
+        "operationId": "listProjects",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "description": "Filter by project status.",
+            "schema": {
+              "type": "string",
+              "enum": ["ALL", "ARCHIVED", "PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"],
+              "default": "ALL"
             }
+          },
+          {
+            "name": "teamProjects",
+            "in": "query",
+            "required": false,
+            "description": "If true, include team projects.",
+            "schema": { "type": "boolean", "default": false }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Free-text search in project name.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "description": "Page number (min 1).",
+            "schema": { "type": "integer", "minimum": 1, "default": 1 }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "description": "Items per page (1-1000).",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 1000 }
           }
-        },
+        ],
         "responses": {
-          "201": {
-            "description": "Project created successfully",
+          "200": {
+            "description": "Projects retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "id": {
-                      "type": "string",
-                      "description": "Created project ID",
-                      "example": "01jzmvc20cjq5hj5saa96ttp2x"
+                    "data": {
+                      "type": "array",
+                      "description": "Array of projects",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "description": "Project ID", "example": "01jzmvc20cjq5hj5saa96ttp2x" },
+                          "name": { "type": "string", "description": "Project name", "example": "Meeting Recording" },
+                          "firstRecordingId": { "type": "string", "description": "First recording ID" },
+                          "sourceLanguage": { "type": "string", "description": "Source language code" },
+                          "subtitleProfileName": { "type": "string", "description": "Subtitle profile name" },
+                          "mediaType": { "type": "string", "enum": ["AUDIO", "VIDEO", "AUDIO_VIDEO"], "description": "Project media type" },
+                          "duration": { "type": "number", "description": "Total duration in seconds" },
+                          "fileCount": { "type": "number", "description": "Number of files in project" },
+                          "owner": { "type": "string", "description": "Owner user or team name" },
+                          "status": { "type": "string", "enum": ["ARCHIVED", "PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"], "description": "Current project status", "example": "IN_PROGRESS" },
+                          "recordingTypes": { "type": "array", "items": { "type": "string", "enum": ["TRANSCRIPTION", "TRANSLATION", "DUBBING", "SUMMARY"] } },
+                          "createdAt": { "type": "string", "format": "date-time", "description": "Project creation timestamp" },
+                          "updatedAt": { "type": "string", "format": "date-time", "description": "Project last update timestamp" }
+                        },
+                        "required": ["id", "name", "status", "createdAt", "updatedAt"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer" },
+                        "pageSize": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "totalPages": { "type": "integer" },
+                        "nextPageToken": { "type": "string" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages"]
                     }
                   }
                 }
@@ -113,43 +119,373 @@
             }
           },
           "400": {
-            "description": "Bad Request (invalid input)",
+            "description": "Bad Request (invalid query parameters)",
             "content": {
               "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "invalid_query": {
+                    "summary": "Invalid query",
+                    "value": { "success": false, "statusCode": 400, "message": "Bad Request", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "invalid_api_key": {
+                    "summary": "Invalid API key",
+                    "value": { "success": false, "statusCode": 401, "message": "Unauthorized", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (access denied)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "forbidden": {
+                    "summary": "Access denied",
+                    "value": { "success": false, "statusCode": 403, "message": "Access denied", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "server_error": {
+                    "summary": "Unexpected error",
+                    "value": { "success": false, "statusCode": 500, "message": "Internal server error", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Project",
+        "description": "Creates an empty project and redirects the client to the upload service to upload files. After upload completion, the service will finalize the project automatically.",
+        "operationId": "createProject",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "required": false,
+            "description": "Project title (defaults to 'Untitled Project').",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "Redirect to external upload service",
+            "headers": {
+              "Location": {
+                "schema": { "type": "string", "format": "uri" },
+                "description": "URL to redirect to for file upload"
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
                 "examples": {
                   "no_files": {
-                    "summary": "No files provided",
-                    "value": {
-                      "statusCode": 400,
-                      "message": "There are no files"
+                    "summary": "No files provided (redirect endpoint)",
+                    "value": { "success": false, "statusCode": 400, "message": "There are no files", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  },
+                  "malformed_multipart": {
+                    "summary": "Malformed multipart payload (upload service)",
+                    "value": { "success": false, "statusCode": 400, "message": "Malformed multipart payload", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  },
+                  "validation_failed": {
+                    "summary": "Validation failed (upload service)",
+                    "value": { "success": false, "statusCode": 400, "message": "Validation failed", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  },
+                  "max_files": {
+                    "summary": "Too many files (upload service)",
+                    "value": { "success": false, "statusCode": 400, "message": "Maximum 5 files allowed", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  },
+                  "max_files_combined": {
+                    "summary": "Too many total inputs (upload service)",
+                    "value": { "success": false, "statusCode": 400, "message": "Maximum 5 files allowed (uploads + fileUrls)", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  },
+                  "at_least_one": {
+                    "summary": "No files or URLs (upload service)",
+                    "value": { "success": false, "statusCode": 400, "message": "At least one file must be provided (file uploads or fileUrls)", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  },
+                  "upload_failed": {
+                    "summary": "Upload failed (generic)",
+                    "value": { "success": false, "statusCode": 400, "message": "Upload failed", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "file_too_large": {
+                    "summary": "Max size exceeded per file",
+                    "value": { "success": false, "statusCode": 413, "message": "File too large. Max size is 5GB per file", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported Media Type",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "unsupported_content_type": {
+                    "summary": "Content-Type must be multipart/form-data",
+                    "value": { "success": false, "statusCode": 415, "message": "Content-Type must be multipart/form-data", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "upload_service_unavailable": {
+                    "summary": "Upload service not configured",
+                    "value": { "success": false, "statusCode": 503, "message": "Single-shot upload URL is not configured", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway (error calling start endpoint)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "start_error": {
+                    "summary": "Error calling start endpoint",
+                    "value": { "success": false, "statusCode": 502, "message": "Error calling start endpoint", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } }
+            }
+          }
+        }
+      }
+    },
+    "/v1/projects/{id}": {
+      "get": {
+        "summary": "Get Project Details",
+        "description": "Retrieve detailed information about a specific project",
+        "operationId": "getProjectDetails",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "description": "Project ID", "example": "01jzmvc20cjq5hj5saa96ttp2x" },
+                    "name": { "type": "string", "description": "Project name", "example": "Meeting Recording" },
+                    "firstRecordingId": { "type": "string", "description": "First recording ID" },
+                    "sourceLanguage": { "type": "string", "description": "Source language code" },
+                    "subtitleProfileName": { "type": "string", "description": "Subtitle profile name" },
+                    "mediaType": { "type": "string", "enum": ["AUDIO", "VIDEO", "AUDIO_VIDEO"], "description": "Project media type" },
+                    "duration": { "type": "number", "description": "Total duration in seconds" },
+                    "fileCount": { "type": "number", "description": "Number of files in project" },
+                    "owner": { "type": "string", "description": "Owner user or team name" },
+                    "status": { "type": "string", "enum": ["ARCHIVED", "PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"], "description": "Current project status", "example": "IN_PROGRESS" },
+                    "recordingTypes": { "type": "array", "items": { "type": "string", "enum": ["TRANSCRIPTION", "TRANSLATION", "DUBBING", "SUMMARY"] } },
+                    "createdAt": { "type": "string", "format": "date-time", "description": "Project creation timestamp" },
+                    "updatedAt": { "type": "string", "format": "date-time", "description": "Project last update timestamp" },
+                    "recordings": {
+                      "type": "array",
+                      "description": "Recordings within the project",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "description": "Recording ID" },
+                          "name": { "type": "string", "description": "Recording name" },
+                          "type": { "type": "string", "description": "File MIME type" },
+                          "extension": { "type": "string", "description": "File extension" },
+                          "sourceLanguage": { "type": "string", "description": "Source language code" },
+                          "translationLanguages": { "type": "array", "items": { "type": "string" }, "description": "Target translation languages" },
+                          "dubbingLanguages": { "type": "array", "items": { "type": "string" }, "description": "Target dubbing languages" },
+                          "summaryEnabled": { "type": "boolean", "description": "Whether summary is enabled" },
+                          "customAttributesEnabled": { "type": "boolean", "description": "Whether custom attributes are enabled" },
+                          "duration": { "type": "number", "description": "Recording duration in seconds" },
+                          "createdAt": { "type": "string", "format": "date-time", "description": "Recording creation timestamp" },
+                          "updatedAt": { "type": "string", "format": "date-time", "description": "Recording last update timestamp" },
+                          "status": { "type": "string", "description": "Recording status", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"] }
+                        }
+                      }
                     }
                   },
-                  "too_many_files": {
-                    "summary": "Too many files",
-                    "value": {
-                      "statusCode": 400,
-                      "message": "Maximum 5 files allowed. You currently have 7 file(s)."
-                    }
-                  },
-                  "invalid_format": {
-                    "summary": "Unsupported file format",
-                    "value": {
-                      "statusCode": 400,
-                      "message": "Unsupported file format. Only MP3, WAV, M4A, MP4, and MOV files are allowed."
-                    }
-                  },
-                  "too_large": {
-                    "summary": "File too large",
-                    "value": {
-                      "statusCode": 400,
-                      "message": "File size cannot exceed 5GB."
-                    }
-                  },
-                  "too_long": {
-                    "summary": "File too long",
-                    "value": {
-                      "statusCode": 400,
-                      "message": "File duration cannot exceed 180 minutes."
+                  "required": ["id", "name", "status", "createdAt", "updatedAt"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request (invalid ID)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "invalid_id": {
+                    "summary": "Invalid project id",
+                    "value": { "success": false, "statusCode": 400, "message": "Bad Request", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "invalid_api_key": {
+                    "summary": "Invalid API key",
+                    "value": { "success": false, "statusCode": 401, "message": "Unauthorized", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "not_found": {
+                    "summary": "Project not found",
+                    "value": { "success": false, "statusCode": 404, "message": "Project not found", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "server_error": {
+                    "summary": "Unexpected error",
+                    "value": { "success": false, "statusCode": 500, "message": "Internal server error", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/subtitle-profiles": {
+      "get": {
+        "summary": "Get Subtitle Profiles",
+        "description": "Retrieve available subtitle profiles for the authenticated account",
+        "operationId": "getSubtitleProfiles",
+        "security": [{ "apiKeyAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Subtitle profiles retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "description": "Array of subtitle profiles",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid", "description": "Subtitle profile ID" },
+                          "name": { "type": "string", "description": "Subtitle profile name" },
+                          "description": { "type": "string", "description": "Subtitle profile description" },
+                          "active": { "type": "boolean", "description": "Whether this profile is active" },
+                          "minDuration": { "type": "number", "description": "Minimum subtitle duration (seconds)" },
+                          "maxDuration": { "type": "number", "description": "Maximum subtitle duration (seconds)" },
+                          "maxLineCharacterCount": { "type": "number", "description": "Max characters per line" },
+                          "maxGapBetweenWords": { "type": "number", "description": "Max gap between words (seconds)" },
+                          "subtitlePosition": { "type": "string", "description": "Subtitle position", "enum": ["top", "bottom", "center", "right", "middle", "left"] },
+                          "displaySpeakerNames": { "type": "boolean", "description": "Display speaker names" },
+                          "maxLinesPerScreen": { "type": "number", "description": "Max lines per screen" },
+                          "fontSize": { "type": "number", "description": "Font size for subtitles" },
+                          "textColor": { "type": "string", "description": "Text color (hex)" },
+                          "backgroundColor": { "type": "string", "description": "Background color (hex)" },
+                          "createdAt": { "type": "string", "format": "date-time", "description": "Creation time" },
+                          "updatedAt": { "type": "string", "format": "date-time", "description": "Last update time" }
+                        },
+                        "required": ["id", "name", "active"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer" },
+                        "pageSize": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "totalPages": { "type": "integer" },
+                        "nextPageToken": { "type": "string" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages"]
                     }
                   }
                 }
@@ -157,10 +493,200 @@
             }
           },
           "401": {
-            "description": "Unauthorized (invalid API key)"
+            "description": "Unauthorized (invalid API key)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "invalid_api_key": {
+                    "summary": "Invalid API key",
+                    "value": { "success": false, "statusCode": 401, "message": "Unauthorized", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden (access denied)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "forbidden": {
+                    "summary": "Access denied",
+                    "value": { "success": false, "statusCode": 403, "message": "Access denied", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
           },
           "500": {
-            "description": "Internal server error"
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "server_error": {
+                    "summary": "Unexpected error",
+                    "value": { "success": false, "statusCode": 500, "message": "Internal server error", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/v1/recordings/{recordingId}/status": {
+      "get": {
+        "summary": "Get Recording Status (Unified)",
+        "description": "Retrieve overall status, per-language completed steps, or single-language steps using query params. For completed steps, you will receive only fields for the completed steps.",
+        "operationId": "getRecordingStatusUnified",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          { "name": "recordingId", "in": "path", "required": true, "description": "Recording ID", "schema": { "type": "string" } },
+          { "name": "summary", "in": "query", "required": false, "description": "If true, returns overall status as a string.", "schema": { "type": "boolean", "default": false } },
+          { "name": "language", "in": "query", "required": false, "description": "Language code to get steps for a specific language.", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recording status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "type": "object", "properties": { "status": { "type": "string", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"] } }, "required": ["status"] },
+                    { "type": "object", "additionalProperties": { "type": "object", "properties": { "transcription": { "type": "boolean" }, "translation": { "type": "boolean" }, "dubbing": { "type": "boolean" }, "summary": { "type": "boolean" } } } },
+                    { "type": "object", "properties": { "transcription": { "type": "boolean" }, "translation": { "type": "boolean" }, "dubbing": { "type": "boolean" }, "summary": { "type": "boolean" } } }
+                  ]
+                },
+                "examples": {
+                  "overall": { "summary": "Overall status", "value": { "status": "IN_PROGRESS" } },
+                  "allLangs": { "summary": "All langs + steps", "value": { "en": { "transcription": true }, "tr": { "transcription": true, "translation": true, "dubbing": true } } },
+                  "singleLang": { "summary": "Single language steps", "value": { "transcription": true, "translation": true, "summary": true } }
+          }
+        }
+      }
+    },
+          "400": { "description": "Bad Request (invalid ID or parameters)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" }, "examples": { "invalid_params": { "summary": "Invalid parameters", "value": { "success": false, "statusCode": 400, "message": "Bad Request", "timestamp": "2025-01-01T00:00:00.000Z" } } } } } },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "invalid_api_key": {
+                    "summary": "Invalid API key",
+                    "value": { "success": false, "statusCode": 401, "message": "Unauthorized", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Forbidden (access denied)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" }, "examples": { "forbidden": { "summary": "Access denied", "value": { "success": false, "statusCode": 403, "message": "Access denied", "timestamp": "2025-01-01T00:00:00.000Z" } } } } } },
+          "404": {
+            "description": "Recording not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "not_found": {
+                    "summary": "Recording not found",
+                    "value": { "success": false, "statusCode": 404, "message": "Recording not found", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "server_error": {
+                    "summary": "Unexpected error",
+                    "value": { "success": false, "statusCode": 500, "message": "Internal server error", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/recordings/{recordingId}": {
+      "get": {
+        "summary": "Get Recording Output",
+        "description": "Retrieve transcription, translation or dubbing outputs using a single query-driven endpoint.",
+        "operationId": "getRecordingOutput",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          { "name": "recordingId", "in": "path", "required": true, "description": "Recording ID", "schema": { "type": "string" } },
+          { "name": "task", "in": "query", "required": true, "description": "Task to retrieve output for (case-insensitive).", "schema": { "type": "string", "enum": ["transcription", "translation", "dubbing"] } },
+          { "name": "format", "in": "query", "required": false, "description": "Output format. Defaults to srt. For dubbing you may request mp3 to get downloadable audio URLs.", "schema": { "type": "string", "enum": ["srt", "vtt", "mp3"] } },
+          { "name": "language", "in": "query", "required": false, "description": "Language code (when requesting a specific translation or dubbing).", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recording output retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Map of language code to content. For srt/vtt, the value is subtitle content; for mp3, the value is a downloadable audio URL." },
+                "examples": {
+                  "transcriptionSrt": { "summary": "Original transcription as SRT (map)", "value": { "en": "1\n00:00:01,000 --> 00:00:04,000\nHello..." } },
+                  "translationVttAll": { "summary": "All translations as VTTs (map)", "value": { "es": "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nHola...", "fr": "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nBonjour..." } },
+                  "dubbingVttSingle": { "summary": "Spanish dubbing subtitles as VTT (single lang)", "value": { "es": "WEBVTT\n\n00:00:01.000 --> 00:00:04.000\nHola..." } },
+                  "dubbingMp3All": { "summary": "All dubbings → audio URLs (map)", "value": { "es": "https://example.com/es.mp3", "fr": "https://example.com/fr.mp3" } },
+                  "dubbingMp3Single": { "summary": "One dubbing (French) → audio URL (map)", "value": { "fr": "https://example.com/fr.mp3" } }
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad Request (invalid ID or parameters)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" }, "examples": { "invalid_params": { "summary": "Invalid parameters", "value": { "success": false, "statusCode": 400, "message": "Bad Request", "timestamp": "2025-01-01T00:00:00.000Z" } } } } } },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "invalid_api_key": {
+                    "summary": "Invalid API key",
+                    "value": { "success": false, "statusCode": 401, "message": "Unauthorized", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Forbidden (access denied)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" }, "examples": { "forbidden": { "summary": "Access denied", "value": { "success": false, "statusCode": 403, "message": "Access denied", "timestamp": "2025-01-01T00:00:00.000Z" } } } } } },
+          "404": {
+            "description": "Recording not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "not_found": {
+                    "summary": "Recording not found",
+                    "value": { "success": false, "statusCode": 404, "message": "Recording not found", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "server_error": {
+                    "summary": "Unexpected error",
+                    "value": { "success": false, "statusCode": 500, "message": "Internal server error", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -176,6 +702,18 @@
         "type": "apiKey",
         "in": "header",
         "name": "X-API-Key"
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "statusCode": { "type": "integer", "example": 400 },
+          "message": { "type": "string", "example": "Bad Request" },
+          "timestamp": { "type": "string", "format": "date-time", "example": "2025-01-01T00:00:00.000Z" }
+        },
+        "required": ["success", "statusCode", "message", "timestamp"]
       }
     }
   }
