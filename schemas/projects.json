@@ -178,7 +178,7 @@
       },
       "post": {
         "summary": "Create Project",
-        "description": "Creates an empty project and redirects the client to the upload service to upload files. After upload completion, the service will finalize the project automatically.",
+        "description": "Creates an empty project and redirects the client to the upload service to upload files. After upload completion, the service will finalize the project automatically. Direct file uploads are more robust and recommended over providing fileUrls.\n\nUpload behavior and limits:\n- 10-minute inactivity timeout per upload stream.\n- If the client connection drops, the upload is aborted and cannot resume; retry from the start.\n- Multi-hour uploads are supported as long as data keeps flowing and the connection stays open.",
         "operationId": "createProject",
         "security": [{ "apiKeyAuth": [] }],
         "parameters": [
@@ -186,11 +186,145 @@
             "name": "title",
             "in": "query",
             "required": false,
-            "description": "Project title (defaults to 'Untitled Project').",
-            "schema": { "type": "string" }
+            "description": "Project title",
+            "schema": { "type": "string", "default": "Untitled Project" }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sourceLanguage": {
+                    "type": "string",
+                    "description": "Source language code",
+                    "enum": [
+                      "auto","en","en-us","en-gb","en-in","en-au","en-ca","en-za","zh","zh-cn","zh-tw","zh-hk","de","es","es-es","es-mx","es-419","es-ar","ru","ko","fr","fr-ca","ja","pt","pt-br","tr","pl","ca","nl","ar","ar-sa","ar-ae","sv","it","id","hi","fi","vi","he","uk","el","ms","cs","ro","da","hu","ta","no","th","ur","hr","bg","lt","la","mi","ml","cy","sk","te","fa","lv","bn","sr","az","sl","kn","et","mk","br","eu","is","hy","ne","mn","bs","kk","sq","sw","gl","mr","pa","si","km","sn","yo","so","af","oc","ka","be","tg","sd","gu","am","yi","lo","uz","fo","ht","ps","tk","nn","mt","sa","lb","my","bo","tl","mg","as","tt","haw","ln","ha","ba","jw","su","yue","fil","ga","zu","ig","ceb","ny","ky"
+                    ]
+                  },
+                  "subtitleProfiles": {
+                    "description": "Array of subtitle profile selections. In multipart, provide this as a JSON array string.",
+                    "type": "array",
+                    "items": { "$ref": "#/components/schemas/CreateProjectSubtitleProfile" }
+                  },
+                  "translationLanguages": {
+                    "description": "Target languages for translation. Provide as JSON array or JSON string.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "en","en-us","en-gb","en-in","en-au","en-ca","en-za","zh","zh-cn","zh-tw","zh-hk","de","es","es-es","es-mx","es-419","es-ar","ru","ko","fr","fr-ca","ja","pt","pt-br","tr","pl","ca","nl","ar","ar-sa","ar-ae","sv","it","id","hi","fi","vi","he","uk","el","ms","cs","ro","da","hu","ta","no","th","ur","hr","bg","lt","la","mi","ml","cy","sk","te","fa","lv","bn","sr","az","sl","kn","et","mk","br","eu","is","hy","ne","mn","bs","kk","sq","sw","gl","mr","pa","si","km","sn","yo","so","af","oc","ka","be","tg","sd","gu","am","yi","lo","uz","fo","ht","ps","tk","nn","mt","sa","lb","my","bo","tl","mg","as","tt","haw","ln","ha","ba","jw","su","yue","fil","ga","zu","ig","ceb","ny","ky"
+                      ]
+                    }
+                  },
+                  "dubbingLanguages": {
+                    "description": "Target languages for dubbing. Provide as JSON array or JSON string.",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "af","ar","hy","as","az","be","bn","bs","bg","ca","ceb","ny","zh","hr","cs","da","nl","en","et","fil","fi","fr","gl","ka","de","el","gu","ha","he","hi","hu","is","id","ga","it","ja","jw","kn","kk","ky","ko","lv","ln","lt","lb","mk","ms","ml","mr","ne","no","ps","fa","pl","pt","pa","ro","ru","sr","sd","sk","sl","so","es","sw","sv","ta","te","th","tr","uk","ur","vi","cy","ar-sa","es-mx","pt-br","zh-cn","en-us","en-gb","fr-ca"
+                      ]
+                    }
+                  },
+                  "summary": { "type": "boolean", "description": "Enable summary generation" },
+                  "customAttributes": { "type": "boolean", "description": "Enable custom attributes extraction" },
+                  "insights": {
+                    "description": "Requested insights. Provide as JSON array or JSON string.",
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "glossary": { "description": "Glossary configuration (JSON object or JSON string)", "oneOf": [ { "type": "object" }, { "type": "string" } ] },
+                  "safeCommunications": {
+                    "description": "Safe communications options. Provide as JSON array or JSON string.",
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "pronunciations": {
+                    "description": "Pronunciations to apply. In multipart, provide as JSON array string.",
+                    "type": "array",
+                    "items": { "$ref": "#/components/schemas/CreateProjectPronunciation" }
+                  },
+                  "fileUrls": {
+                    "description": "External file URLs to import. Provide as JSON array or JSON string. If provided, uploaded files in this request are ignored for processing (but still count towards the 5-item limit).",
+                    "type": "array",
+                    "items": { "type": "string", "format": "uri" }
+                  },
+                  "files": {
+                  "description": "One or more files to upload (max 5 total across files + fileUrls). Ignored for processing when fileUrls are provided (but still count towards the limit).",
+                    "type": "array",
+                    "items": { "type": "string", "format": "binary" }
+                  }
+                },
+                "required": ["sourceLanguage", "subtitleProfiles"]
+              },
+            "examples": {
+              "direct_upload": {
+                "summary": "Direct file upload (full request example)",
+                "value": {
+                  "sourceLanguage": "en",
+                  "subtitleProfiles": [
+                    { "subtitleProfileId": "11111111-1111-1111-1111-111111111111", "languageCode": "en" }
+                  ],
+                  "translationLanguages": ["tr", "es"],
+                  "dubbingLanguages": ["tr"],
+                  "summary": false,
+                  "customAttributes": true,
+                  "insights": ["topics", "action_items"],
+                  "glossary": { "domain": "general" },
+                  "safeCommunications": ["redact_pii"],
+                  "pronunciations": [
+                    { "pronunciationId": "22222222-2222-2222-2222-222222222222", "languageCode": "en" }
+                  ]
+                }
+              },
+              "url_import": {
+                "summary": "Import from external URLs (full request example)",
+                "value": {
+                  "sourceLanguage": "en",
+                  "subtitleProfiles": [
+                    { "subtitleProfileId": "11111111-1111-1111-1111-111111111111", "languageCode": "en" }
+                  ],
+                  "translationLanguages": ["tr", "es"],
+                  "dubbingLanguages": ["tr"],
+                  "summary": false,
+                  "customAttributes": true,
+                  "insights": ["topics", "action_items"],
+                  "glossary": { "domain": "general" },
+                  "safeCommunications": ["redact_pii"],
+                  "pronunciations": [
+                    { "pronunciationId": "22222222-2222-2222-2222-222222222222", "languageCode": "en" }
+                  ],
+                  "fileUrls": [
+                    "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                  ]
+                }
+              }
+            }
+            }
+          }
+        },
         "responses": {
+          "200": {
+            "description": "Upload accepted and project initialized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "string", "description": "Project ID" }
+                  },
+                  "required": ["id"]
+                },
+                "examples": {
+                  "ok_by_uploads": { "summary": "Success (direct uploads)", "value": { "id": "01jzmvc20cjq5hj5saa96ttp2x" } },
+                  "ok_by_file_urls": { "summary": "Success (fileUrls)", "value": { "id": "01jzmvc20cjq5hj5saa96ttp2x" } }
+                }
+              }
+            }
+          },
           "307": {
             "description": "Redirect to external upload service",
             "headers": {
@@ -714,6 +848,34 @@
           "timestamp": { "type": "string", "format": "date-time", "example": "2025-01-01T00:00:00.000Z" }
         },
         "required": ["success", "statusCode", "message", "timestamp"]
+      },
+      "CreateProjectSubtitleProfile": {
+        "type": "object",
+        "properties": {
+          "subtitleProfileId": { "type": "string", "format": "uuid", "description": "Subtitle profile ID" },
+          "languageCode": {
+            "type": "string",
+            "description": "Language for this profile",
+            "enum": [
+              "auto","en","en-us","en-gb","en-in","en-au","en-ca","en-za","zh","zh-cn","zh-tw","zh-hk","de","es","es-es","es-mx","es-419","es-ar","ru","ko","fr","fr-ca","ja","pt","pt-br","tr","pl","ca","nl","ar","ar-sa","ar-ae","sv","it","id","hi","fi","vi","he","uk","el","ms","cs","ro","da","hu","ta","no","th","ur","hr","bg","lt","la","mi","ml","cy","sk","te","fa","lv","bn","sr","az","sl","kn","et","mk","br","eu","is","hy","ne","mn","bs","kk","sq","sw","gl","mr","pa","si","km","sn","yo","so","af","oc","ka","be","tg","sd","gu","am","yi","lo","uz","fo","ht","ps","tk","nn","mt","sa","lb","my","bo","tl","mg","as","tt","haw","ln","ha","ba","jw","su","yue","fil","ga","zu","ig","ceb","ny","ky"
+            ]
+          }
+        },
+        "required": ["subtitleProfileId", "languageCode"]
+      },
+      "CreateProjectPronunciation": {
+        "type": "object",
+        "properties": {
+          "pronunciationId": { "type": "string", "format": "uuid", "description": "Pronunciation ID" },
+          "languageCode": {
+            "type": "string",
+            "description": "Language for this pronunciation",
+            "enum": [
+              "af","ar","hy","as","az","be","bn","bs","bg","ca","ceb","ny","zh","hr","cs","da","nl","en","et","fil","fi","fr","gl","ka","de","el","gu","ha","he","hi","hu","is","id","ga","it","ja","jw","kn","kk","ky","ko","lv","ln","lt","lb","mk","ms","ml","mr","ne","no","ps","fa","pl","pt","pa","ro","ru","sr","sd","sk","sl","so","es","sw","sv","ta","te","th","tr","uk","ur","vi","cy","ar-sa","es-mx","pt-br","zh-cn","en-us","en-gb","fr-ca"
+            ]
+          }
+        },
+        "required": ["pronunciationId", "languageCode"]
       }
     }
   }
