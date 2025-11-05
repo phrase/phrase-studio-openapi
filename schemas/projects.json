@@ -89,11 +89,13 @@
                           "name": { "type": "string", "description": "Project name", "example": "Meeting Recording" },
                           "firstRecordingId": { "type": "string", "description": "First recording ID" },
                           "sourceLanguage": { "type": "string", "description": "Source language code" },
-                          "subtitleProfileName": { "type": "string", "description": "Subtitle profile name" },
+                          "subtitleProfileId": { "type": "string", "format": "uuid", "description": "Subtitle profile ID" },
                           "mediaType": { "type": "string", "enum": ["AUDIO", "VIDEO", "AUDIO_VIDEO"], "description": "Project media type" },
                           "duration": { "type": "number", "description": "Total duration in seconds" },
                           "fileCount": { "type": "number", "description": "Number of files in project" },
                           "owner": { "type": "string", "description": "Owner user or team name" },
+                          "accountId": { "type": "string", "description": "Account ID" },
+                          "archived": { "type": "boolean", "description": "Whether project is archived" },
                           "status": { "type": "string", "enum": ["ARCHIVED", "PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"], "description": "Current project status", "example": "IN_PROGRESS" },
                           "recordingTypes": { "type": "array", "items": { "type": "string", "enum": ["TRANSCRIPTION", "TRANSLATION", "DUBBING", "SUMMARY"] } },
                           "createdAt": { "type": "string", "format": "date-time", "description": "Project creation timestamp" },
@@ -108,8 +110,7 @@
                         "page": { "type": "integer" },
                         "pageSize": { "type": "integer" },
                         "total": { "type": "integer" },
-                        "totalPages": { "type": "integer" },
-                        "nextPageToken": { "type": "string" }
+                        "totalPages": { "type": "integer" }
                       },
                       "required": ["page", "pageSize", "total", "totalPages"]
                     }
@@ -232,15 +233,15 @@
                   "summary": { "type": "boolean", "description": "Enable summary generation" },
                   "customAttributes": { "type": "boolean", "description": "Enable custom attributes extraction" },
                   "insights": {
-                    "description": "Requested insights. Provide as JSON array or JSON string.",
+                    "description": "Requested insight IDs (UUID v4). Provide as JSON array or JSON string.",
                     "type": "array",
-                    "items": { "type": "string" }
+                    "items": { "type": "string", "format": "uuid" }
                   },
                   "glossary": { "description": "Glossary configuration (JSON object or JSON string)", "oneOf": [ { "type": "object" }, { "type": "string" } ] },
                   "safeCommunications": {
-                    "description": "Safe communications options. Provide as JSON array or JSON string.",
+                    "description": "Safe communication IDs (UUID v4). Provide as JSON array or JSON string.",
                     "type": "array",
-                    "items": { "type": "string" }
+                    "items": { "type": "string", "format": "uuid" }
                   },
                   "pronunciations": {
                     "description": "Pronunciations to apply. In multipart, provide as JSON array string.",
@@ -272,9 +273,9 @@
                   "dubbingLanguages": ["tr"],
                   "summary": false,
                   "customAttributes": true,
-                  "insights": ["topics", "action_items"],
+                  "insights": ["33333333-3333-3333-3333-333333333333", "44444444-4444-4444-4444-444444444444"],
                   "glossary": { "domain": "general" },
-                  "safeCommunications": ["redact_pii"],
+                  "safeCommunications": ["55555555-5555-5555-5555-555555555555"],
                   "pronunciations": [
                     { "pronunciationId": "22222222-2222-2222-2222-222222222222", "languageCode": "en" }
                   ]
@@ -291,9 +292,9 @@
                   "dubbingLanguages": ["tr"],
                   "summary": false,
                   "customAttributes": true,
-                  "insights": ["topics", "action_items"],
+                  "insights": ["33333333-3333-3333-3333-333333333333", "44444444-4444-4444-4444-444444444444"],
                   "glossary": { "domain": "general" },
-                  "safeCommunications": ["redact_pii"],
+                  "safeCommunications": ["55555555-5555-5555-5555-555555555555"],
                   "pronunciations": [
                     { "pronunciationId": "22222222-2222-2222-2222-222222222222", "languageCode": "en" }
                   ],
@@ -474,11 +475,13 @@
                     "name": { "type": "string", "description": "Project name", "example": "Meeting Recording" },
                     "firstRecordingId": { "type": "string", "description": "First recording ID" },
                     "sourceLanguage": { "type": "string", "description": "Source language code" },
-                    "subtitleProfileName": { "type": "string", "description": "Subtitle profile name" },
+                    "subtitleProfileId": { "type": "string", "format": "uuid", "description": "Subtitle profile ID" },
                     "mediaType": { "type": "string", "enum": ["AUDIO", "VIDEO", "AUDIO_VIDEO"], "description": "Project media type" },
                     "duration": { "type": "number", "description": "Total duration in seconds" },
                     "fileCount": { "type": "number", "description": "Number of files in project" },
                     "owner": { "type": "string", "description": "Owner user or team name" },
+                    "accountId": { "type": "string", "description": "Account ID" },
+                    "archived": { "type": "boolean", "description": "Whether project is archived" },
                     "status": { "type": "string", "enum": ["ARCHIVED", "PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"], "description": "Current project status", "example": "IN_PROGRESS" },
                     "recordingTypes": { "type": "array", "items": { "type": "string", "enum": ["TRANSCRIPTION", "TRANSLATION", "DUBBING", "SUMMARY"] } },
                     "createdAt": { "type": "string", "format": "date-time", "description": "Project creation timestamp" },
@@ -490,6 +493,7 @@
                         "type": "object",
                         "properties": {
                           "id": { "type": "string", "description": "Recording ID" },
+                          "projectId": { "type": "string", "description": "Project ID" },
                           "name": { "type": "string", "description": "Recording name" },
                           "type": { "type": "string", "description": "File MIME type" },
                           "extension": { "type": "string", "description": "File extension" },
@@ -498,10 +502,12 @@
                           "dubbingLanguages": { "type": "array", "items": { "type": "string" }, "description": "Target dubbing languages" },
                           "summaryEnabled": { "type": "boolean", "description": "Whether summary is enabled" },
                           "customAttributesEnabled": { "type": "boolean", "description": "Whether custom attributes are enabled" },
+                          "insightsEnabled": { "type": "boolean", "description": "Whether insights are enabled" },
+                          "safeCommunicationsEnabled": { "type": "boolean", "description": "Whether safe communications are enabled" },
                           "duration": { "type": "number", "description": "Recording duration in seconds" },
+                          "sourceDuration": { "type": "number", "description": "Original source duration in seconds" },
                           "createdAt": { "type": "string", "format": "date-time", "description": "Recording creation timestamp" },
-                          "updatedAt": { "type": "string", "format": "date-time", "description": "Recording last update timestamp" },
-                          "status": { "type": "string", "description": "Recording status", "enum": ["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED"] }
+                          "updatedAt": { "type": "string", "format": "date-time", "description": "Recording last update timestamp" }
                         }
                       }
                     }
@@ -616,8 +622,7 @@
                         "page": { "type": "integer" },
                         "pageSize": { "type": "integer" },
                         "total": { "type": "integer" },
-                        "totalPages": { "type": "integer" },
-                        "nextPageToken": { "type": "string" }
+                        "totalPages": { "type": "integer" }
                       },
                       "required": ["page", "pageSize", "total", "totalPages"]
                     }
