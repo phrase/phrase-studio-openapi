@@ -510,9 +510,239 @@
                           "updatedAt": { "type": "string", "format": "date-time", "description": "Recording last update timestamp" }
                         }
                       }
+                    },
+                    "glossary": {
+                      "type": "object",
+                      "description": "Glossary configuration for the project (if any)",
+                      "properties": {
+                        "id": { "type": "string", "format": "uuid", "description": "Glossary ID" },
+                        "name": { "type": "string", "description": "Glossary name" },
+                        "items": { "type": "string", "description": "Glossary items (newline-separated)" },
+                        "additionalItems": { "type": "string", "description": "Additional glossary items" }
+                      }
+                    },
+                    "pronunciations": {
+                      "type": "array",
+                      "description": "Pronunciations applied to the project",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid", "description": "Pronunciation set ID" },
+                          "name": { "type": "string", "description": "Pronunciation set name" },
+                          "languageCode": { "type": "string", "description": "Language code for this pronunciation set" },
+                          "items": {
+                            "type": "array",
+                            "description": "Pronunciation pairs",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "source": { "type": "string", "description": "Source word/phrase" },
+                                "target": { "type": "string", "description": "Target pronunciation" }
+                              },
+                              "required": ["source", "target"]
+                            }
+                          }
+                        },
+                        "required": ["id", "name", "languageCode", "items"]
+                      }
+                    },
+                    "safeCommunications": {
+                      "type": "array",
+                      "description": "Safe communication evaluations applied to the project",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid", "description": "Safe communication ID" },
+                          "name": { "type": "string", "description": "Safe communication name" },
+                          "description": { "type": "string", "description": "Safe communication description" }
+                        },
+                        "required": ["id", "name"]
+                      }
+                    },
+                    "insights": {
+                      "type": "array",
+                      "description": "Insights applied to the project",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid", "description": "Insight ID" },
+                          "name": { "type": "string", "description": "Insight name" },
+                          "description": { "type": "string", "description": "Insight description" },
+                          "items": {
+                            "type": "array",
+                            "description": "Insight items (prompts)",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": { "type": "string", "format": "uuid", "description": "Insight item ID" },
+                                "name": { "type": "string", "description": "Insight item name" },
+                                "content": { "type": "string", "description": "Insight item content (prompt)" }
+                              },
+                              "required": ["id", "name", "content"]
+                            }
+                          }
+                        },
+                        "required": ["id", "name"]
+                      }
                     }
                   },
                   "required": ["id", "name", "status", "createdAt", "updatedAt"]
+                },
+                "examples": {
+                  "basic_project": {
+                    "summary": "Basic project without insights/safe communications",
+                    "value": {
+                      "id": "24746a21-bf6a-46c8-872f-8df3c9df1b53",
+                      "accountId": "e7631985-e50d-424e-beef-6cb536d32c11",
+                      "name": "testtimezonefromapi",
+                      "archived": false,
+                      "firstRecordingId": "f62368a1-6fe7-4015-a010-3360ab987134",
+                      "sourceLanguage": "en",
+                      "subtitleProfileId": "12c499bb-1ec9-43f2-9e0a-c07486366898",
+                      "mediaType": "AUDIO",
+                      "duration": 11.7,
+                      "fileCount": 1,
+                      "owner": "some username",
+                      "status": "COMPLETED",
+                      "recordingTypes": ["TRANSCRIPTION"],
+                      "createdAt": "2025-11-06T16:27:38.279Z",
+                      "updatedAt": "2025-11-06T16:32:19.742Z",
+                      "recordings": [
+                        {
+                          "id": "f62368a1-6fe7-4015-a010-3360ab987134",
+                          "projectId": "24746a21-bf6a-46c8-872f-8df3c9df1b53",
+                          "name": "audio.wav",
+                          "type": "application/octet-stream",
+                          "extension": "wav",
+                          "sourceLanguage": "en",
+                          "translationLanguages": [],
+                          "dubbingLanguages": [],
+                          "summaryEnabled": false,
+                          "customAttributesEnabled": false,
+                          "sourceDuration": 11.65,
+                          "duration": 11.7,
+                          "createdAt": "2025-11-06T16:27:40.620Z",
+                          "updatedAt": "2025-11-06T16:27:40.620Z",
+                          "insightsEnabled": false,
+                          "safeCommunicationsEnabled": false
+                        }
+                      ],
+                      "pronunciations": [],
+                      "safeCommunications": [],
+                      "insights": []
+                    }
+                  },
+                  "full_project": {
+                    "summary": "Project with all features enabled",
+                    "value": {
+                      "id": "f372af3c-c0c5-4913-9c65-fa24d66bbc24",
+                      "accountId": "e7631985-e50d-424e-beef-6cb536d32c11",
+                      "name": "test glossary fetch",
+                      "archived": false,
+                      "firstRecordingId": "5160671f-3233-43f8-bd84-086bfe7fa13d",
+                      "sourceLanguage": "en",
+                      "subtitleProfileId": "12c499bb-1ec9-43f2-9e0a-c07486366898",
+                      "mediaType": "AUDIO",
+                      "duration": 11.7,
+                      "fileCount": 1,
+                      "owner": "some username",
+                      "status": "COMPLETED",
+                      "recordingTypes": ["TRANSCRIPTION", "TRANSLATION", "DUBBING", "SUMMARY"],
+                      "createdAt": "2025-11-06T16:48:28.959Z",
+                      "updatedAt": "2025-11-06T17:00:00.395Z",
+                      "recordings": [
+                        {
+                          "id": "5160671f-3233-43f8-bd84-086bfe7fa13d",
+                          "projectId": "f372af3c-c0c5-4913-9c65-fa24d66bbc24",
+                          "name": "telefoncu-teyze.wav",
+                          "type": "audio/wav",
+                          "extension": "wav",
+                          "sourceLanguage": "en",
+                          "translationLanguages": ["tr"],
+                          "dubbingLanguages": ["tr"],
+                          "summaryEnabled": false,
+                          "customAttributesEnabled": false,
+                          "sourceDuration": 11.65,
+                          "duration": 11.7,
+                          "createdAt": "2025-11-06T16:48:31.746Z",
+                          "updatedAt": "2025-11-06T16:48:31.746Z",
+                          "insightsEnabled": true,
+                          "safeCommunicationsEnabled": true
+                        }
+                      ],
+                      "pronunciations": [
+                        {
+                          "id": "f983b484-e1b6-439d-8aca-fd9c29181773",
+                          "name": "english  greeting",
+                          "languageCode": "tr",
+                          "items": [
+                            {
+                              "source": "hello",
+                              "target": "onion"
+                            }
+                          ]
+                        }
+                      ],
+                      "safeCommunications": [
+                        {
+                          "id": "550e8400-e29b-41d4-a716-446655440003",
+                          "name": "Respectful Language",
+                          "description": "Assesses the use of polite, considerate, and civil language while ensuring the absence of derogatory terms, personal attacks, or demeaning phrases towards any individual or group."
+                        },
+                        {
+                          "id": "550e8400-e29b-41d4-a716-446655440002",
+                          "name": "Potential Red Flags",
+                          "description": "Identifies content, phrases, or exchanges that could be considered unethical, illegal, or harmful, potentially exposing individuals or organizations to legal, reputational, or security risks."
+                        }
+                      ],
+                      "insights": [
+                        {
+                          "id": "550e8400-e29b-41d4-a716-446655445001",
+                          "name": "Earnings Call",
+                          "description": "Curated prompts to analyze quarterly earnings calls, focusing on growth drivers, risk factors, and forward-looking guidance to inform strategic decisions.",
+                          "items": [
+                            {
+                              "id": "550e8400-e29b-41d4-a716-446655445101",
+                              "name": "Growth and Revenue Drivers",
+                              "content": "Can you elaborate on the primary drivers behind this quarter's revenue growth or decline? Specifically, how do factors such as market demand, pricing changes, new customer acquisition, or product/service mix have impacted the earnings results?"
+                            },
+                            {
+                              "id": "550e8400-e29b-41d4-a716-446655445102",
+                              "name": "Challenges and Risk Management",
+                              "content": "What were the main challenges faced this quarter, and how have they impacted the financial results? Additionally, how is the company addressing these challenges, and what risk management strategies are being implemented to mitigate potential future risks?"
+                            },
+                            {
+                              "id": "550e8400-e29b-41d4-a716-446655445103",
+                              "name": "Future Outlook and Strategic Initiatives",
+                              "content": "Based on this quarter's performance and current market trends, what is the company's outlook for the upcoming quarters? Can you provide more details on any planned strategic initiatives or investments that are expected to drive future growth or improve operational efficiency?"
+                            }
+                          ]
+                        },
+                        {
+                          "id": "550e8400-e29b-41d4-a716-446655445002",
+                          "name": "Company Presentation",
+                          "description": "Prompts designed to extract actionable insights from company presentations, covering implementation steps, emerging trends, and lessons learned for better execution.",
+                          "items": [
+                            {
+                              "id": "550e8400-e29b-41d4-a716-446655445201",
+                              "name": "Insights on Implementation",
+                              "content": "Based on the strategies or solutions you presented, could you suggest practical steps for implementation in a [specific context relevant to your field or interest]? How do these steps account for common obstacles or industry-specific challenges?"
+                            },
+                            {
+                              "id": "550e8400-e29b-41d4-a716-446655445202",
+                              "name": "Future Implications and Trends",
+                              "content": "From your perspective, how might the trends or innovations you discussed today evolve over the next few years? What do you foresee as the potential long-term impact on our industry, and how should professionals or organizations prepare to adapt?"
+                            },
+                            {
+                              "id": "550e8400-e29b-41d4-a716-446655445203",
+                              "name": "Lessons from Successes and Failures",
+                              "content": "Can you share a personal experience or a case study where the approach you advocated led to significant outcomes, either successful or otherwise? What were the key lessons learned, and how can these insights inform future strategy or decision-making?"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
                 }
               }
             }
@@ -547,6 +777,84 @@
           },
           "404": {
             "description": "Project not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "not_found": {
+                    "summary": "Project not found",
+                    "value": { "success": false, "statusCode": 404, "message": "Project not found", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "server_error": {
+                    "summary": "Unexpected error",
+                    "value": { "success": false, "statusCode": 500, "message": "Internal server error", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Project",
+        "description": "Delete a specific project and all its associated recordings and data",
+        "operationId": "deleteProject",
+        "security": [{ "apiKeyAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Project ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project deleted successfully"
+          },
+          "400": {
+            "description": "Bad Request (invalid ID)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "invalid_id": {
+                    "summary": "Invalid project id",
+                    "value": { "success": false, "statusCode": 400, "message": "Bad Request", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "examples": {
+                  "invalid_api_key": {
+                    "summary": "Invalid API key",
+                    "value": { "success": false, "statusCode": 401, "message": "Unauthorized", "timestamp": "2025-01-01T00:00:00.000Z" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Project not found or you don't have access to it",
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ErrorResponse" },
@@ -676,7 +984,6 @@
         }
       }
     },
-
     "/v1/recordings/{recordingId}/status": {
       "get": {
         "summary": "Get Recording Status (Unified)",
@@ -826,6 +1133,385 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/v1/pronunciations": {
+      "get": {
+        "summary": "Get Pronunciations",
+        "description": "Retrieve available pronunciations for the authenticated account",
+        "operationId": "getPronunciations",
+        "security": [{ "apiKeyAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Pronunciations retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "description": "Array of pronunciations",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid", "description": "Pronunciation set ID" },
+                          "accountId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }], "description": "Account ID (nullable for shared)" },
+                          "name": { "type": "string", "description": "Pronunciation set name" },
+                          "description": { "oneOf": [{ "type": "string" }, { "type": "null" }], "description": "Pronunciation set description" },
+                          "active": { "type": "boolean", "description": "Whether this set is active" },
+                          "createdAt": { "type": "string", "format": "date-time", "description": "Creation time" },
+                          "updatedAt": { "type": "string", "format": "date-time", "description": "Last update time" },
+                          "items": {
+                            "type": "array",
+                            "description": "Pronunciation items",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": { "type": "string", "format": "uuid" },
+                                "pronunciationId": { "type": "string", "format": "uuid" },
+                                "source": { "type": "string" },
+                                "target": { "type": "string" },
+                                "createdAt": { "type": "string", "format": "date-time" },
+                                "updatedAt": { "type": "string", "format": "date-time" }
+                              },
+                              "required": ["id", "pronunciationId", "source", "target", "createdAt", "updatedAt"]
+                            }
+                          }
+                        },
+                        "required": ["id", "name", "active"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer" },
+                        "pageSize": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "totalPages": { "type": "integer" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages"]
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Sample response",
+                    "value": {
+                      "data": [
+                        {
+                          "id": "f983b484-e1b6-439d-8aca-fd9c29181773",
+                          "accountId": "e7631985-e50d-424e-beef-6cb536d32c11",
+                          "name": "english  greeting",
+                          "description": "test",
+                          "active": true,
+                          "createdAt": "2025-10-13T10:53:12.400Z",
+                          "updatedAt": "2025-10-13T10:53:12.400Z",
+                          "items": [
+                            {
+                              "id": "03e75ff0-50f2-493c-a46b-b0f4101e5850",
+                              "pronunciationId": "f983b484-e1b6-439d-8aca-fd9c29181773",
+                              "source": "hello",
+                              "target": "onion",
+                              "createdAt": "2025-10-13T10:53:26.934Z",
+                              "updatedAt": "2025-10-13T10:53:26.934Z"
+                            }
+                          ]
+                        }
+                      ],
+                      "pagination": { "page": 1, "pageSize": 1, "total": 1, "totalPages": 1 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "403": {
+            "description": "Forbidden (access denied)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/v1/glossaries": {
+      "get": {
+        "summary": "Get Glossaries",
+        "description": "Retrieve available glossaries for the authenticated account. Items have newline character between them.",
+        "operationId": "getGlossaries",
+        "security": [{ "apiKeyAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Glossaries retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "description": "Array of glossaries",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid", "description": "Glossary ID" },
+                          "accountId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }], "description": "Account ID (nullable for shared)" },
+                          "name": { "type": "string", "description": "Glossary name" },
+                          "description": { "oneOf": [{ "type": "string" }, { "type": "null" }], "description": "Glossary description" },
+                          "items": { "type": "string", "description": "Glossary items (newline-separated)" },
+                          "active": { "type": "boolean", "description": "Whether this glossary is active" },
+                          "createdAt": { "type": "string", "format": "date-time", "description": "Creation time" },
+                          "updatedAt": { "type": "string", "format": "date-time", "description": "Last update time" }
+                        },
+                        "required": ["id", "name", "active"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer" },
+                        "pageSize": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "totalPages": { "type": "integer" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages"]
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Sample response",
+                    "value": {
+                      "data": [
+                        {
+                          "id": "00cd5cdb-ce8b-423a-a9b8-ca5dd5db7442",
+                          "accountId": "e7631985-e50d-424e-beef-6cb536d32c11",
+                          "name": "company names",
+                          "description": null,
+                          "items": "OTOMATA\nNike\nHP\nNvidia",
+                          "active": true,
+                          "createdAt": "2025-11-06T10:15:59.738Z",
+                          "updatedAt": "2025-11-06T10:15:59.738Z"
+                        },
+                        {
+                          "id": "99af75c5-b606-4aee-a3db-ee149c662ea6",
+                          "accountId": "e7631985-e50d-424e-beef-6cb536d32c11",
+                          "name": "test",
+                          "description": null,
+                          "items": "voila violing ding dong",
+                          "active": true,
+                          "createdAt": "2025-11-06T09:43:17.888Z",
+                          "updatedAt": "2025-11-06T09:43:17.888Z"
+                        }
+                      ],
+                      "pagination": { "page": 1, "pageSize": 2, "total": 2, "totalPages": 1 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "403": {
+            "description": "Forbidden (access denied)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/v1/insights": {
+      "get": {
+        "summary": "Get Insights",
+        "description": "Retrieve available insights for the authenticated account",
+        "operationId": "getInsights",
+        "security": [{ "apiKeyAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Insights retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "description": "Array of insights",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid", "description": "Insight ID" },
+                          "accountId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }], "description": "Account ID (nullable for shared)" },
+                          "name": { "type": "string", "description": "Insight name" },
+                          "description": { "type": "string", "description": "Insight description" },
+                          "active": { "type": "boolean", "description": "Whether this insight is active" },
+                          "createdAt": { "type": "string", "format": "date-time", "description": "Creation time" },
+                          "updatedAt": { "type": "string", "format": "date-time", "description": "Last update time" },
+                          "items": {
+                            "type": "array",
+                            "description": "Insight items",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": { "type": "string", "format": "uuid" },
+                                "insightId": { "type": "string", "format": "uuid" },
+                                "name": { "type": "string" },
+                                "content": { "type": "string" },
+                                "createdAt": { "type": "string", "format": "date-time" },
+                                "updatedAt": { "type": "string", "format": "date-time" }
+                              },
+                              "required": ["id", "insightId", "name", "content", "createdAt", "updatedAt"]
+                            }
+                          }
+                        },
+                        "required": ["id", "name", "active"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer" },
+                        "pageSize": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "totalPages": { "type": "integer" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages"]
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Sample response",
+                    "value": {"data":[{"id":"550e8400-e29b-41d4-a716-446655445001","accountId":null,"name":"Earnings Call","description":"Curated prompts to analyze quarterly earnings calls, focusing on growth drivers, risk factors, and forward-looking guidance to inform strategic decisions.","active":true,"createdAt":"2025-09-12T10:59:01.426Z","updatedAt":"2025-09-18T12:55:15.134Z","items":[{"id":"550e8400-e29b-41d4-a716-446655445103","insightId":"550e8400-e29b-41d4-a716-446655445001","name":"Future Outlook and Strategic Initiatives","content":"Based on this quarter's performance and current market trends, what is the company's outlook for the upcoming quarters? Can you provide more details on any planned strategic initiatives or investments that are expected to drive future growth or improve operational efficiency?","createdAt":"2025-09-12T10:59:02.097Z","updatedAt":"2025-09-18T12:55:15.993Z"},{"id":"550e8400-e29b-41d4-a716-446655445102","insightId":"550e8400-e29b-41d4-a716-446655445001","name":"Challenges and Risk Management","content":"What were the main challenges faced this quarter, and how have they impacted the financial results? Additionally, how is the company addressing these challenges, and what risk management strategies are being implemented to mitigate potential future risks?","createdAt":"2025-09-12T10:59:01.958Z","updatedAt":"2025-09-18T12:55:15.822Z"},{"id":"550e8400-e29b-41d4-a716-446655445101","insightId":"550e8400-e29b-41d4-a716-446655445001","name":"Growth and Revenue Drivers","content":"Can you elaborate on the primary drivers behind this quarter's revenue growth or decline? Specifically, how do factors such as market demand, pricing changes, new customer acquisition, or product/service mix have impacted the earnings results?","createdAt":"2025-09-12T10:59:01.827Z","updatedAt":"2025-09-18T12:55:15.650Z"}]},{"id":"550e8400-e29b-41d4-a716-446655445002","accountId":null,"name":"Company Presentation","description":"Prompts designed to extract actionable insights from company presentations, covering implementation steps, emerging trends, and lessons learned for better execution.","active":true,"createdAt":"2025-09-12T10:59:01.560Z","updatedAt":"2025-09-18T12:55:15.306Z","items":[{"id":"550e8400-e29b-41d4-a716-446655445203","insightId":"550e8400-e29b-41d4-a716-446655445002","name":"Lessons from Successes and Failures","content":"Can you share a personal experience or a case study where the approach you advocated led to significant outcomes, either successful or otherwise? What were the key lessons learned, and how can these insights inform future strategy or decision-making?","createdAt":"2025-09-12T10:59:02.518Z","updatedAt":"2025-09-18T12:55:16.507Z"},{"id":"550e8400-e29b-41d4-a716-446655445202","insightId":"550e8400-e29b-41d4-a716-446655445002","name":"Future Implications and Trends","content":"From your perspective, how might the trends or innovations you discussed today evolve over the next few years? What do you foresee as the potential long-term impact on our industry, and how should professionals or organizations prepare to adapt?","createdAt":"2025-09-12T10:59:02.362Z","updatedAt":"2025-09-18T12:55:16.336Z"},{"id":"550e8400-e29b-41d4-a716-446655445201","insightId":"550e8400-e29b-41d4-a716-446655445002","name":"Insights on Implementation","content":"Based on the strategies or solutions you presented, could you suggest practical steps for implementation in a [specific context relevant to your field or interest]? How do these steps account for common obstacles or industry-specific challenges?","createdAt":"2025-09-12T10:59:02.229Z","updatedAt":"2025-09-18T12:55:16.165Z"}]},{"id":"550e8400-e29b-41d4-a716-446655445003","accountId":null,"name":"General","description":"Universal analysis prompts to summarize objectives, key arguments, and underlying assumptions for any conversation or meeting context.","active":true,"createdAt":"2025-09-12T10:59:01.692Z","updatedAt":"2025-09-18T12:55:15.478Z","items":[{"id":"550e8400-e29b-41d4-a716-446655445303","insightId":"550e8400-e29b-41d4-a716-446655445003","name":"Underlying Assumptions and Future Implications","content":"What assumptions were underlying the participants' viewpoints or decisions, and how might these impact future actions or decisions? Are there any potential long-term implications or follow-up actions discussed or implied?","createdAt":"2025-09-12T10:59:02.914Z","updatedAt":"2025-09-18T12:55:17.023Z"},{"id":"550e8400-e29b-41d4-a716-446655445302","insightId":"550e8400-e29b-41d4-a716-446655445003","name":"Key Points and Arguments","content":"What were the main points or arguments presented by each participant? How did these contribute to the progression of the conversation, and were there any pivotal moments or turning points?","createdAt":"2025-09-12T10:59:02.782Z","updatedAt":"2025-09-18T12:55:16.850Z"},{"id":"550e8400-e29b-41d4-a716-446655445301","insightId":"550e8400-e29b-41d4-a716-446655445003","name":"Objective and Outcomes","content":"What were the primary objectives or goals of this conversation? Were these objectives met, and what were the key outcomes or decisions made?","createdAt":"2025-09-12T10:59:02.650Z","updatedAt":"2025-09-18T12:55:16.678Z"}]},{"id":"cf85c4e5-66e3-4f37-a8a1-e0c62b74b32a","accountId":"e7631985-e50d-424e-beef-6cb536d32c11","name":"test","description":"my test insight\n","active":true,"createdAt":"2025-11-06T17:15:27.209Z","updatedAt":"2025-11-06T17:15:27.209Z","items":[{"id":"1b600ac7-088e-46c3-afc7-006c1a63243a","insightId":"cf85c4e5-66e3-4f37-a8a1-e0c62b74b32a","name":"this is test prompt","content":"this is test prompt","createdAt":"2025-11-06T17:15:42.018Z","updatedAt":"2025-11-06T17:15:42.018Z"}]}],"pagination":{"page":1,"pageSize":4,"total":4,"totalPages":1}}
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "403": {
+            "description": "Forbidden (access denied)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          }
+        }
+      }
+    },
+    "/v1/safe-communications": {
+      "get": {
+        "summary": "Get Safe Communications",
+        "description": "Retrieve available safe communications for the authenticated account",
+        "operationId": "getSafeCommunications",
+        "security": [{ "apiKeyAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Safe communications retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "description": "Array of safe communications",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "string", "format": "uuid", "description": "Safe communication ID" },
+                          "accountId": { "oneOf": [{ "type": "string", "format": "uuid" }, { "type": "null" }], "description": "Account ID (nullable for shared)" },
+                          "name": { "type": "string", "description": "Name" },
+                          "description": { "type": "string", "description": "Description" },
+                          "content": { "type": "string", "description": "Evaluation content/prompt" },
+                          "createdAt": { "type": "string", "format": "date-time", "description": "Creation time" },
+                          "updatedAt": { "type": "string", "format": "date-time", "description": "Last update time" }
+                        },
+                        "required": ["id", "name", "content"]
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "properties": {
+                        "page": { "type": "integer" },
+                        "pageSize": { "type": "integer" },
+                        "total": { "type": "integer" },
+                        "totalPages": { "type": "integer" }
+                      },
+                      "required": ["page", "pageSize", "total", "totalPages"]
+                    }
+                  }
+                },
+                "examples": {
+                  "example": {
+                    "summary": "Sample response",
+                    "value": {
+                      "data": [
+                        {
+                          "id": "550e8400-e29b-41d4-a716-446655440003",
+                          "accountId": null,
+                          "name": "Respectful Language",
+                          "description": "Assesses the use of polite, considerate, and civil language while ensuring the absence of derogatory terms, personal attacks, or demeaning phrases towards any individual or group.",
+                          "content": "Score\nOn a scale of 20 to 100, where 20 represents a complete lack of respect and 100 represents the highest standard of respectful communication, how would you rate the following conversation in terms of:\nThe use of polite and considerate language,\nThe absence of derogatory terms, personal attacks, or demeaning phrases,\nThe level of understanding and empathy demonstrated towards all participants,\nThe degree to which the language promotes a positive and inclusive dialogue?\n\nDescription\nDoes the language in the following conversation exhibit Respectful language considering aspects such as politeness, considerateness, and civility, without any use of derogatory terms, personal attacks, or demeaning phrases towards any individual or group?",
+                          "createdAt": "2025-09-10T14:33:02.786Z",
+                          "updatedAt": "2025-09-18T09:55:13.427Z"
+                        },
+                        {
+                          "id": "550e8400-e29b-41d4-a716-446655440002",
+                          "accountId": null,
+                          "name": "Potential Red Flags",
+                          "description": "Identifies content, phrases, or exchanges that could be considered unethical, illegal, or harmful, potentially exposing individuals or organizations to legal, reputational, or security risks.",
+                          "content": "Score\nOn a scale of 0 to 100, how would you rate the following conversation in terms of ethical and legal integrity, with consideration to the following factors:\nThe absence of language or content that could be interpreted as unethical, illegal, or in violation of policies or regulations,\nThe presence of respectful and professional dialogue that upholds the values and reputation of the individuals and the organization,\nThe degree to which the conversation maintains confidentiality, data protection, and respect for personal and proprietary information,\nThe extent to which the conversation aligns with the established norms, values, and codes of conduct of the relevant individuals or organization?\n\nDescription\nDoes the following conversation contain any content, phrases, or exchanges that could be considered unethical, illegal, or harmful, potentially exposing individuals or the organization to risks such as legal liability, reputational damage, or security threats?",
+                          "createdAt": "2025-09-10T14:33:02.655Z",
+                          "updatedAt": "2025-09-18T09:55:13.255Z"
+                        },
+                        {
+                          "id": "550e8400-e29b-41d4-a716-446655440001",
+                          "accountId": null,
+                          "name": "Diversity and Inclusion",
+                          "description": "Evaluates how well the conversation reflects awareness and respect for diversity and inclusion, recognizing and valuing diverse perspectives, experiences, and backgrounds of all participants.",
+                          "content": "Score\nOn a scale of 20 to 100, where 20 indicates no consideration of diversity and inclusion and 100 represents exemplary incorporation of diverse and inclusive practices, how would you rate the conversation in terms of:\nThe representation and integration of diverse perspectives and backgrounds,\nThe level of sensitivity and respect shown towards cultural, racial, gender, and other forms of diversity,\nThe extent to which the conversation promotes equal participation and values contributions from all individuals,\nThe presence of language and attitudes that support and foster an inclusive environment?\n\nDescription\nHow well does the following conversation reflect an awareness and respect for diversity and inclusion, in terms of recognizing, valuing, and integrating diverse perspectives, experiences, and backgrounds of all participants?",
+                          "createdAt": "2025-09-10T14:33:02.522Z",
+                          "updatedAt": "2025-09-18T09:55:13.083Z"
+                        }
+                      ],
+                      "pagination": { "page": 1, "pageSize": 3, "total": 3, "totalPages": 1 }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized (invalid API key)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "403": {
+            "description": "Forbidden (access denied)",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
           }
         }
       }
